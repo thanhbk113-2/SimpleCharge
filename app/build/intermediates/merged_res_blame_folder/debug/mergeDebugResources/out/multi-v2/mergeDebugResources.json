@@ -3999,7 +3999,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\thanh-win10\\Desktop\\Dự án code\\App vibe code\\app\\src\\main\\res\\values\\themes.xml",
+                    "source": "C:\\Users\\thanh-win10\\Desktop\\Dự án code\\SimpleCharge\\app\\src\\main\\res\\values\\themes.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",
@@ -4054,23 +4054,6 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\thanh-win10\\Desktop\\Dự án code\\App vibe code\\app\\src\\main\\res\\values\\strings.xml",
-                    "from": {
-                        "startLines": "1",
-                        "startColumns": "4",
-                        "startOffsets": "16",
-                        "endColumns": "49",
-                        "endOffsets": "61"
-                    },
-                    "to": {
-                        "startLines": "99",
-                        "startColumns": "4",
-                        "startOffsets": "6020",
-                        "endColumns": "49",
-                        "endOffsets": "6065"
-                    }
-                },
-                {
                     "source": "C:\\Users\\thanh-win10\\.gradle\\caches\\8.8\\transforms\\577015fb1b9bf56a8d4304cee13891d6\\transformed\\lifecycle-viewmodel-2.7.0\\res\\values\\values.xml",
                     "from": {
                         "startLines": "2",
@@ -4119,6 +4102,23 @@
                         "startOffsets": "4706,5650",
                         "endColumns": "41,59",
                         "endOffsets": "4743,5705"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\thanh-win10\\Desktop\\Dự án code\\SimpleCharge\\app\\src\\main\\res\\values\\strings.xml",
+                    "from": {
+                        "startLines": "1",
+                        "startColumns": "4",
+                        "startOffsets": "16",
+                        "endColumns": "49",
+                        "endOffsets": "61"
+                    },
+                    "to": {
+                        "startLines": "99",
+                        "startColumns": "4",
+                        "startOffsets": "6020",
+                        "endColumns": "49",
+                        "endOffsets": "6065"
                     }
                 },
                 {

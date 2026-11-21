@@ -1,17 +1,23 @@
 package com.example.simplecharge
 
+import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.os.BatteryManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
+import androidx.core.content.ContextCompat
 import com.example.simplecharge.data.ActiveSessionState
 import com.example.simplecharge.data.ChargingSession
 import com.example.simplecharge.data.SessionManager
+import com.example.simplecharge.service.ChargingForegroundService
 import com.example.simplecharge.ui.SimpleChargeApp
 import com.example.simplecharge.ui.theme.SimpleChargeTheme
 import kotlinx.coroutines.delay
@@ -36,11 +42,30 @@ class MainActivity : ComponentActivity() {
     // For manual simulation in testing
     private var simulatedBonusLevel = 0
 
+    // Receiver lắng nghe thay đổi battery (chỉ khi app ở foreground)
     private val batteryReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             updateBatteryInfo()
         }
     }
+
+    // Receiver nhận broadcast từ ChargingForegroundService khi có sự kiện (auto-finish, target reached)
+    private val sessionChangedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == ChargingForegroundService.ACTION_SESSION_CHANGED) {
+                reloadSessionState()
+            }
+        }
+    }
+    private var sessionReceiverRegistered = false
+
+    // Xin quyền POST_NOTIFICATIONS (Android 13+)
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                startChargingServiceIfNeeded()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,8 +75,8 @@ class MainActivity : ComponentActivity() {
         languageState.value = sessionManager.getLanguage()
         recentSessionsState.value = sessionManager.getRecentSessions()
 
-        // Read initial battery status
         updateBatteryInfo()
+        requestNotificationPermissionAndStartService()
 
         setContent {
             SimpleChargeTheme {
@@ -67,7 +92,7 @@ class MainActivity : ComponentActivity() {
                 val elapsedMs by elapsedMsState
                 val recentSessions by recentSessionsState
 
-                // Coroutine ticker: updates elapsed time and checks battery every second
+                // Coroutine ticker: cập nhật elapsed time mỗi giây
                 LaunchedEffect(isCharging, activeSession.isActive) {
                     while (true) {
                         if (activeSession.isActive) {
@@ -129,20 +154,46 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Đăng ký battery receiver khi app ở foreground
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_BATTERY_CHANGED)
             addAction(Intent.ACTION_POWER_CONNECTED)
             addAction(Intent.ACTION_POWER_DISCONNECTED)
         }
         registerReceiver(batteryReceiver, filter)
+
+        // Đăng ký receiver nhận SESSION_CHANGED từ service
+        if (!sessionReceiverRegistered) {
+            val sessionFilter = IntentFilter(ChargingForegroundService.ACTION_SESSION_CHANGED)
+            registerReceiver(sessionChangedReceiver, sessionFilter, RECEIVER_NOT_EXPORTED)
+            sessionReceiverRegistered = true
+        }
+
+        // Reload state khi quay lại app (service có thể đã thay đổi session)
+        reloadSessionState()
         updateBatteryInfo()
     }
 
     override fun onPause() {
         super.onPause()
-        try {
-            unregisterReceiver(batteryReceiver)
-        } catch (_: Exception) {
+        try { unregisterReceiver(batteryReceiver) } catch (_: Exception) {}
+        if (sessionReceiverRegistered) {
+            try { unregisterReceiver(sessionChangedReceiver) } catch (_: Exception) {}
+            sessionReceiverRegistered = false
+        }
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────────────────
+
+    /**
+     * Reload toàn bộ session state từ SessionManager (SharedPreferences).
+     * Gọi khi: app resume, nhận SESSION_CHANGED broadcast.
+     */
+    private fun reloadSessionState() {
+        activeSessionState.value = sessionManager.getActiveSession()
+        recentSessionsState.value = sessionManager.getRecentSessions()
+        if (!activeSessionState.value.isActive) {
+            elapsedMsState.longValue = 0L
         }
     }
 
@@ -168,13 +219,11 @@ class MainActivity : ComponentActivity() {
         isChargingState.value = isCharging
         plugTypeState.value = plugType
 
-        // Temperature & Voltage
         val rawTemp = batteryStatus?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0
         temperatureCState.floatValue = rawTemp / 10f
         val rawVolt = batteryStatus?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 0) ?: 0
         voltageVState.floatValue = rawVolt / 1000f
 
-        // Battery Current (mA)
         val bm = getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
         val rawCurrent = bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) ?: 0
         val currentMa = if (rawCurrent != 0 && rawCurrent != Integer.MIN_VALUE) {
@@ -183,19 +232,55 @@ class MainActivity : ComponentActivity() {
         } else null
         currentMaState.value = currentMa
 
-        // Session logic
+        // Session logic (khi app ở foreground)
         if (isCharging) {
             val session = sessionManager.startOrResumeSession(effectivePct)
             activeSessionState.value = session
 
-            // Check if battery level reached target
             val completed = sessionManager.checkAndHandleBatteryLevel(effectivePct)
             if (completed != null) {
                 recentSessionsState.value = sessionManager.getRecentSessions()
                 activeSessionState.value = sessionManager.getActiveSession()
             }
         } else {
-            activeSessionState.value = sessionManager.getActiveSession()
+            // Rút sạc khi app đang mở: auto-finish nếu có session active
+            val active = sessionManager.getActiveSession()
+            if (active.isActive) {
+                val session = sessionManager.finishSession(effectivePct)
+                if (session != null) {
+                    recentSessionsState.value = sessionManager.getRecentSessions()
+                }
+                activeSessionState.value = sessionManager.getActiveSession()
+                elapsedMsState.longValue = 0L
+            } else {
+                activeSessionState.value = sessionManager.getActiveSession()
+            }
+        }
+    }
+
+    // ─── Notification permission & service ────────────────────────────────
+
+    private fun requestNotificationPermissionAndStartService() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(
+                    this, Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    startChargingServiceIfNeeded()
+                }
+                else -> {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        } else {
+            startChargingServiceIfNeeded()
+        }
+    }
+
+    private fun startChargingServiceIfNeeded() {
+        // Khởi động foreground service khi đang sạc
+        if (isChargingState.value) {
+            ChargingForegroundService.start(this)
         }
     }
 }

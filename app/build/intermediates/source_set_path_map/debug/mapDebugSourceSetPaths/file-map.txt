@@ -40,9 +40,9 @@ com.example.simplecharge.app-material-ripple-release-38 C:\Users\thanh-win10\.gr
 com.example.simplecharge.app-material-icons-extended-release-39 C:\Users\thanh-win10\.gradle\caches\8.8\transforms\e156e74fd7f95fd4afb19455378c825c\transformed\material-icons-extended-release\res
 com.example.simplecharge.app-material-icons-core-release-40 C:\Users\thanh-win10\.gradle\caches\8.8\transforms\ed4bfef7672da8ee82eb39b555fd25ae\transformed\material-icons-core-release\res
 com.example.simplecharge.app-lifecycle-viewmodel-savedstate-2.7.0-41 C:\Users\thanh-win10\.gradle\caches\8.8\transforms\ef5681d7be2e14cf57dc694284a8cc7c\transformed\lifecycle-viewmodel-savedstate-2.7.0\res
-com.example.simplecharge.app-resValues-42 C:\Users\thanh-win10\Desktop\Dự án code\App vibe code\app\build\generated\res\resValues\debug
-com.example.simplecharge.app-packageDebugResources-43 C:\Users\thanh-win10\Desktop\Dự án code\App vibe code\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
-com.example.simplecharge.app-packageDebugResources-44 C:\Users\thanh-win10\Desktop\Dự án code\App vibe code\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
-com.example.simplecharge.app-debug-45 C:\Users\thanh-win10\Desktop\Dự án code\App vibe code\app\build\intermediates\merged_res\debug\mergeDebugResources
-com.example.simplecharge.app-debug-46 C:\Users\thanh-win10\Desktop\Dự án code\App vibe code\app\src\debug\res
-com.example.simplecharge.app-main-47 C:\Users\thanh-win10\Desktop\Dự án code\App vibe code\app\src\main\res
+com.example.simplecharge.app-resValues-42 C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\build\generated\res\resValues\debug
+com.example.simplecharge.app-packageDebugResources-43 C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.example.simplecharge.app-packageDebugResources-44 C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.example.simplecharge.app-debug-45 C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\build\intermediates\merged_res\debug\mergeDebugResources
+com.example.simplecharge.app-debug-46 C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\debug\res
+com.example.simplecharge.app-main-47 C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\res
