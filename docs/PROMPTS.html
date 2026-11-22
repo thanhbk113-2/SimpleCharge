@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prompt dùng cho AI coding</title>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --card: #161b22;
+        --border: #30363d;
+        --text: #e6edf3;
+        --muted: #8b949e;
+        --accent: #2f81f7;
+        --ok: #3fb950;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #ffffff;
+          --card: #f6f8fa;
+          --border: #d0d7de;
+          --text: #1f2328;
+          --muted: #656d76;
+          --accent: #0969da;
+          --ok: #1a7f37;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.6 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      main {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 32px 20px 80px;
+      }
+      h1 {
+        font-size: 28px;
+        margin: 0 0 8px;
+      }
+      h2 {
+        font-size: 20px;
+        margin: 40px 0 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+      }
+      .note {
+        color: var(--muted);
+        margin: 0 0 8px;
+      }
+      code {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 1px 6px;
+        font-size: 0.9em;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin: 14px 0;
+        overflow: hidden;
+      }
+      .card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+      }
+      .card-head h3 {
+        margin: 0;
+        font-size: 15px;
+      }
+      .desc {
+        color: var(--muted);
+        font-size: 13px;
+        padding: 8px 14px 0;
+        margin: 0;
+      }
+      pre.prompt {
+        margin: 0;
+        padding: 14px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font:
+          14px/1.6 ui-monospace,
+          "Cascadia Code",
+          Consolas,
+          monospace;
+      }
+      button.copy {
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--text);
+        border-radius: 6px;
+        padding: 6px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      button.copy:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      button.copy.done {
+        border-color: var(--ok);
+        color: var(--ok);
+      }
+      ul {
+        padding-left: 20px;
+      }
+      li {
+        margin: 6px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Prompt dùng cho AI coding</h1>
+      <p class="note">
+        File tóm tắt dự án chính: <code>AGENTS.md</code> (thư mục gốc). File
+        <code>.clinerules/project-overview.md</code> chỉ trỏ tới
+        <code>AGENTS.md</code>.
+      </p>
+
+      <h2>A. CLINE</h2>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>A1. Đầu phiên mới</h3>
+          <button class="copy" data-target="a1">Copy</button>
+        </div>
+        <pre class="prompt" id="a1">
+Đọc `AGENTS.md` và `.clinerules/project-overview.md`. Sau đó tóm tắt cho tôi trong 5-7 dòng: dự án làm gì, cấu trúc chính, trạng thái hiện tại. Không quét toàn bộ code. Chỉ đọc thêm file nào thật sự cần cho việc tôi yêu cầu tiếp theo.</pre
+        >
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>A2. Vào việc luôn</h3>
+          <button class="copy" data-target="a2">Copy</button>
+        </div>
+        <p class="desc">Nhớ thay [mô tả việc] bằng việc thật trước khi gửi.</p>
+        <pre class="prompt" id="a2">
+Dựa vào `AGENTS.md`, không đọc lại toàn bộ code. Việc cần làm: [mô tả việc]. Chỉ mở file liên quan, và nói rõ bạn sẽ đọc/sửa file nào trước khi làm.</pre
+        >
+      </div>
+
+      <h2>B. ANTIGRAVITY</h2>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>B1. Đầu phiên mới</h3>
+          <button class="copy" data-target="b1">Copy</button>
+        </div>
+        <pre class="prompt" id="b1">
+Đọc `AGENTS.md` ở thư mục gốc. Sau đó tóm tắt cho tôi trong 5-7 dòng: dự án làm gì, cấu trúc chính, trạng thái hiện tại. Không quét toàn bộ code. Chỉ đọc thêm file nào thật sự cần cho việc tôi yêu cầu tiếp theo.</pre
+        >
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>B2. Vào việc luôn</h3>
+          <button class="copy" data-target="b2">Copy</button>
+        </div>
+        <p class="desc">Nhớ thay [mô tả việc] bằng việc thật trước khi gửi.</p>
+        <pre class="prompt" id="b2">
+Dựa vào `AGENTS.md`, không đọc lại toàn bộ code. Việc cần làm: [mô tả việc]. Chỉ mở file liên quan, và nói rõ bạn sẽ đọc/sửa file nào trước khi làm.</pre
+        >
+      </div>
+
+      <h2>C. DÙNG CHUNG CHO CẢ HAI</h2>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>C1. Cuối phiên</h3>
+          <button class="copy" data-target="c1">Copy</button>
+        </div>
+        <pre class="prompt" id="c1">
+Cập nhật `AGENTS.md` với những gì đã thay đổi và việc còn dang dở.</pre
+        >
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>C2. Sau khi xong tính năng lớn</h3>
+          <button class="copy" data-target="c2">Copy</button>
+        </div>
+        <pre class="prompt" id="c2">
+Cập nhật lại `AGENTS.md` theo thay đổi vừa rồi.</pre
+        >
+      </div>
+
+      <h2>D. TẠO FILE TÓM TẮT CHO DỰ ÁN CHƯA CÓ (chạy 1 lần)</h2>
+      <p class="note">
+        Dùng khi mở dự án cũ mà chưa có <code>AGENTS.md</code> hoặc
+        <code>.clinerules/project-overview.md</code>.
+      </p>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>D1. Prompt dùng chung (Cline và Antigravity)</h3>
+          <button class="copy" data-target="d1">Copy</button>
+        </div>
+        <pre class="prompt" id="d1">
+Kiểm tra xem dự án đã có `AGENTS.md` ở thư mục gốc và `.clinerules/project-overview.md` chưa.
+
+Nếu `AGENTS.md` chưa có: đọc dự án một lần, theo thứ tự ưu tiên: file build (`build.gradle.kts`, `settings.gradle.kts`, `gradle.properties`), `README.md`, rồi các file code chính. Bỏ qua thư mục `build`, `.gradle`, `.idea`, ảnh và file tự sinh. Sau đó tạo `AGENTS.md` ở thư mục gốc, tối đa khoảng 1.000 từ, gồm:
+1. Mục đích dự án (2-3 câu)
+2. Tính năng chính
+3. Công nghệ và thư viện đang dùng (kèm phiên bản quan trọng)
+4. Cấu trúc thư mục, mỗi file chính làm gì (kèm đường dẫn đầy đủ)
+5. Luồng dữ liệu / luồng hoạt động chính
+6. Quy ước code (ngôn ngữ giao diện, đặt tên, điều cấm)
+7. Chỗ dễ lỗi hoặc cần lưu ý
+8. Cách build và chạy
+9. Trạng thái hiện tại: đã xong, đang làm dở, việc cần làm tiếp
+
+Nếu `.clinerules/project-overview.md` chưa có: tạo file đó, chỉ ghi một dòng "Xem `AGENTS.md` ở thư mục gốc để biết tổng quan dự án."
+
+Nếu cả hai đã có: không tạo lại, chỉ báo cho tôi biết và hỏi tôi có muốn cập nhật không.
+
+Chỉ ghi những gì bạn thật sự thấy trong code, không đoán. Chỗ nào không chắc thì ghi "chưa rõ". Xong thì tóm tắt cho tôi 5 dòng những gì đã ghi.</pre
+        >
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>D2. Bản ngắn, chỉ cho Antigravity</h3>
+          <button class="copy" data-target="d2">Copy</button>
+        </div>
+        <pre class="prompt" id="d2">
+Đọc dự án một lần (bỏ qua `build`, `.gradle`, `.idea`, ảnh) rồi tạo `AGENTS.md` ở thư mục gốc, dưới 1.000 từ: mục đích, tính năng, công nghệ, cấu trúc thư mục và vai trò từng file chính, luồng dữ liệu, quy ước, chỗ dễ lỗi, cách build, trạng thái hiện tại. Chỉ ghi điều có thật trong code.</pre
+        >
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>D3. Bản ngắn, chỉ cho Cline</h3>
+          <button class="copy" data-target="d3">Copy</button>
+        </div>
+        <pre class="prompt" id="d3">
+Đọc dự án một lần (bỏ qua `build`, `.gradle`, `.idea`, ảnh) rồi tạo `AGENTS.md` ở thư mục gốc theo cấu trúc: mục đích, tính năng, công nghệ, cấu trúc thư mục và vai trò từng file chính, luồng dữ liệu, quy ước, chỗ dễ lỗi, cách build, trạng thái hiện tại. Sau đó tạo `.clinerules/project-overview.md` chỉ gồm một dòng trỏ tới `AGENTS.md`. Chỉ ghi điều có thật trong code.</pre
+        >
+      </div>
+
+      <h2>Mẹo</h2>
+      <ul>
+        <li>
+          Muốn trỏ thẳng file cho AI, gõ ký tự @ rồi chọn file từ danh sách gợi
+          ý trong khung chat.
+        </li>
+        <li>
+          Kiểm tra AI có đọc file không: hỏi "Dự án này dùng thư viện gì, file
+          UI chính ở đâu?". Nếu trả lời đúng ngay mà không chạy lệnh khám phá,
+          tức là đã nạp tốt.
+        </li>
+      </ul>
+    </main>
+
+    <script>
+      function fallbackCopy(text) {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = false;
+        try {
+          ok = document.execCommand("copy");
+        } catch (e) {}
+        document.body.removeChild(ta);
+        return ok;
+      }
+
+      function markDone(btn, ok) {
+        var old = btn.dataset.label || btn.textContent;
+        btn.dataset.label = old;
+        btn.textContent = ok ? "Đã copy ✓" : "Copy lỗi";
+        btn.classList.toggle("done", ok);
+        setTimeout(function () {
+          btn.textContent = old;
+          btn.classList.remove("done");
+        }, 1800);
+      }
+
+      document.querySelectorAll("button.copy").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var text = document.getElementById(btn.dataset.target).textContent;
+          if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(
+              function () {
+                markDone(btn, true);
+              },
+              function () {
+                markDone(btn, fallbackCopy(text));
+              },
+            );
+          } else {
+            markDone(btn, fallbackCopy(text));
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
