@@ -132,7 +132,7 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     onFinishSession = {
-                        val session = sessionManager.finishSession(batteryPct)
+                        val session = sessionManager.finishSession(batteryPct, temperatureC)
                         if (session != null) {
                             recentSessionsState.value = sessionManager.getRecentSessions()
                             NotificationHelper.showDisconnectedNotification(this@MainActivity, batteryPct, session)
@@ -144,7 +144,7 @@ class MainActivity : ComponentActivity() {
                         elapsedMsState.longValue = 0L
                     },
                     onResetSession = {
-                        val session = sessionManager.resetActiveSession(batteryPct)
+                        val session = sessionManager.resetActiveSession(batteryPct, temperatureC)
                         activeSessionState.value = session
                         elapsedMsState.longValue = 0L
                         if (isChargingState.value) {
@@ -238,10 +238,11 @@ class MainActivity : ComponentActivity() {
 
         // Session logic
         if (isCharging) {
-            val session = sessionManager.startOrResumeSession(effectivePct)
+            val session = sessionManager.startOrResumeSession(effectivePct, temperatureCState.floatValue)
             activeSessionState.value = session
+            sessionManager.recordDataPoint(effectivePct, temperatureCState.floatValue)
 
-            val completed = sessionManager.checkAndHandleBatteryLevel(effectivePct)
+            val completed = sessionManager.checkAndHandleBatteryLevel(effectivePct, temperatureCState.floatValue)
             if (completed != null) {
                 recentSessionsState.value = sessionManager.getRecentSessions()
                 activeSessionState.value = sessionManager.getActiveSession()
@@ -251,7 +252,7 @@ class MainActivity : ComponentActivity() {
             // ✅ Tự động finish session khi rút sạc (khi app đang mở)
             val active = sessionManager.getActiveSession()
             if (active.isActive) {
-                val session = sessionManager.finishSession(effectivePct)
+                val session = sessionManager.finishSession(effectivePct, temperatureCState.floatValue)
                 if (session != null) {
                     recentSessionsState.value = sessionManager.getRecentSessions()
                     NotificationHelper.showDisconnectedNotification(this, effectivePct, session)

@@ -20,7 +20,8 @@ class BatteryReceiver : BroadcastReceiver() {
         when (action) {
             Intent.ACTION_POWER_CONNECTED -> {
                 val pct = getBatteryPct(context)
-                sessionManager.startOrResumeSession(pct)
+                val temp = getBatteryTemp(context)
+                sessionManager.startOrResumeSession(pct, temp)
 
                 // 1. Hiển thị thông báo ngay lập tức trên thanh thông báo
                 NotificationHelper.showChargingNotification(context)
@@ -38,8 +39,9 @@ class BatteryReceiver : BroadcastReceiver() {
                 // ✅ 1. Tự động finish session khi rút sạc
                 val active = sessionManager.getActiveSession()
                 val pct = getBatteryPct(context)
+                val temp = getBatteryTemp(context)
                 val session = if (active.isActive) {
-                    sessionManager.finishSession(pct)
+                    sessionManager.finishSession(pct, temp)
                 } else {
                     null
                 }
@@ -64,5 +66,11 @@ class BatteryReceiver : BroadcastReceiver() {
         val level = bs?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: 0
         val scale = bs?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
         return if (scale > 0) (level * 100) / scale else level
+    }
+
+    private fun getBatteryTemp(context: Context): Float {
+        val bs = context.registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val rawTemp = bs?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0
+        return rawTemp / 10f
     }
 }

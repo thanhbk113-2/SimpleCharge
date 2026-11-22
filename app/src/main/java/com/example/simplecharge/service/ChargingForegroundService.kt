@@ -51,7 +51,8 @@ class ChargingForegroundService : Service() {
             when (intent?.action) {
                 Intent.ACTION_POWER_CONNECTED -> {
                     val pct = getCurrentBatteryPct()
-                    sessionManager.startOrResumeSession(pct)
+                    val temp = getCurrentTemp()
+                    sessionManager.startOrResumeSession(pct, temp)
                     sendBroadcast(Intent(ACTION_SESSION_CHANGED).setPackage(packageName))
                     NotificationHelper.showChargingNotification(this@ChargingForegroundService)
                 }
@@ -70,8 +71,9 @@ class ChargingForegroundService : Service() {
                     }
 
                     val pct = getCurrentBatteryPct()
+                    val temp = getCurrentTemp()
                     // Kiểm tra xem pin đã đạt mục tiêu chưa
-                    val completed = sessionManager.checkAndHandleBatteryLevel(pct)
+                    val completed = sessionManager.checkAndHandleBatteryLevel(pct, temp)
                     if (completed != null) {
                         sendBroadcast(Intent(ACTION_SESSION_CHANGED).setPackage(packageName))
                         NotificationHelper.showTargetReachedNotification(
@@ -90,8 +92,9 @@ class ChargingForegroundService : Service() {
     private fun handleUnplugged() {
         val active = sessionManager.getActiveSession()
         val pct = getCurrentBatteryPct()
+        val temp = getCurrentTemp()
         val session = if (active.isActive) {
-            sessionManager.finishSession(pct)
+            sessionManager.finishSession(pct, temp)
         } else null
 
         NotificationHelper.showDisconnectedNotification(this, pct, session)
@@ -181,6 +184,12 @@ class ChargingForegroundService : Service() {
         val level = bs?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: 0
         val scale = bs?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
         return if (scale > 0) (level * 100) / scale else level
+    }
+
+    private fun getCurrentTemp(): Float {
+        val bs = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val rawTemp = bs?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0
+        return rawTemp / 10f
     }
 
     private fun isCurrentlyCharging(): Boolean {

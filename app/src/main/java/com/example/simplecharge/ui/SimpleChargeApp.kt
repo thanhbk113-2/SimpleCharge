@@ -843,6 +843,8 @@ fun RecentSessionsCard(
     strings: AppStrings,
     onClearHistory: () -> Unit
 ) {
+    var selectedSession by remember { mutableStateOf<ChargingSession?>(null) }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -910,7 +912,7 @@ fun RecentSessionsCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             if (recentSessions.isEmpty()) {
                 Box(
@@ -948,26 +950,65 @@ fun RecentSessionsCard(
                     }
                 }
             } else {
+                // Gợi ý chạm để xem biểu đồ
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                ) {
+                    Icon(
+                        Icons.Default.TouchApp,
+                        contentDescription = null,
+                        tint = Cyan400,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Text(
+                        text = strings.tapToViewDetails,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = Slate400,
+                            fontSize = 11.sp
+                        )
+                    )
+                }
+
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val dateFormat = remember { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()) }
                     recentSessions.take(5).forEach { session ->
-                        SessionItemView(session = session, dateFormat = dateFormat)
+                        SessionItemView(
+                            session = session,
+                            dateFormat = dateFormat,
+                            onClick = { selectedSession = session }
+                        )
                     }
                 }
             }
         }
+    }
+
+    // Modal Bottom Sheet chi tiết biểu đồ & thống kê
+    selectedSession?.let { session ->
+        ChargingSessionDetailSheet(
+            session = session,
+            strings = strings,
+            onDismiss = { selectedSession = null }
+        )
     }
 }
 
 @Composable
 fun SessionItemView(
     session: ChargingSession,
-    dateFormat: SimpleDateFormat
+    dateFormat: SimpleDateFormat,
+    onClick: () -> Unit
 ) {
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = Slate900.copy(alpha = 0.5f),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Slate700)
+        border = androidx.compose.foundation.BorderStroke(1.dp, Slate700),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier
@@ -1029,25 +1070,45 @@ fun SessionItemView(
                 }
             }
 
-            // Duration
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = formatDuration(session.durationMs),
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold,
-                        color = Cyan400
-                    )
-                )
-                val durationMins = (session.durationMs / 60000.0)
-                if (durationMins > 0 && session.levelGained > 0) {
-                    val rate = session.levelGained / durationMins
+            // Duration + Icon xem biểu đồ
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = String.format(Locale.US, "%.1f%%/min", rate),
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 10.sp,
-                            color = Slate400
+                        text = formatDuration(session.durationMs),
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            color = Cyan400
                         )
+                    )
+                    val durationMins = (session.durationMs / 60000.0)
+                    if (durationMins > 0 && session.levelGained > 0) {
+                        val rate = session.levelGained / durationMins
+                        Text(
+                            text = String.format(Locale.US, "%.1f%%/min", rate),
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 10.sp,
+                                color = Slate400
+                            )
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(Slate800),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.ShowChart,
+                        contentDescription = "Xem biểu đồ",
+                        tint = Cyan400,
+                        modifier = Modifier.size(16.dp)
                     )
                 }
             }

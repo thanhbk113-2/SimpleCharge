@@ -34,7 +34,18 @@ data class AppStrings(
     val recentSessionsTitle: String,
     val clear: String,
     val noCompletedSessions: String,
-    val noSessionsSubtitle: String
+    val noSessionsSubtitle: String,
+    // Thêm chuỗi cho biểu đồ & chi tiết phiên sạc
+    val sessionDetailsTitle: String,
+    val chargingCurveTitle: String,
+    val chargingSpeed: String,
+    val tempRange: String,
+    val maxTemp: String,
+    val minTemp: String,
+    val batteryGained: String,
+    val chargingDuration: String,
+    val close: String,
+    val tapToViewDetails: String
 )
 
 object Localization {
@@ -72,7 +83,17 @@ object Localization {
         recentSessionsTitle = "RECENT CHARGING SESSIONS",
         clear = "Clear",
         noCompletedSessions = "No completed sessions yet",
-        noSessionsSubtitle = "Charge to your target or tap 'Finish & Save' to record a session."
+        noSessionsSubtitle = "Charge to your target or tap 'Finish & Save' to record a session.",
+        sessionDetailsTitle = "Charging Session Details",
+        chargingCurveTitle = "CHARGING CURVE & PROGRESS",
+        chargingSpeed = "Avg Speed",
+        tempRange = "Battery Temp",
+        maxTemp = "Max",
+        minTemp = "Min",
+        batteryGained = "Battery Gained",
+        chargingDuration = "Duration",
+        close = "Close",
+        tapToViewDetails = "Tap to view chart & stats"
     )
 
     val Vietnamese = AppStrings(
@@ -109,7 +130,17 @@ object Localization {
         recentSessionsTitle = "LỊCH SỬ SẠC GẦN ĐÂY",
         clear = "Xóa",
         noCompletedSessions = "Chưa có phiên sạc nào",
-        noSessionsSubtitle = "Hãy cắm sạc đến mức mục tiêu hoặc nhấn 'Lưu phiên sạc' để ghi lại."
+        noSessionsSubtitle = "Hãy cắm sạc đến mức mục tiêu hoặc nhấn 'Lưu phiên sạc' để ghi lại.",
+        sessionDetailsTitle = "Chi tiết phiên sạc",
+        chargingCurveTitle = "BIỂU ĐỒ TIẾN TRÌNH SẠC",
+        chargingSpeed = "Tốc độ trung bình",
+        tempRange = "Nhiệt độ pin",
+        maxTemp = "Cao nhất",
+        minTemp = "Ban đầu",
+        batteryGained = "Mức pin nạp được",
+        chargingDuration = "Thời gian sạc",
+        close = "Đóng",
+        tapToViewDetails = "Chạm để xem biểu đồ & chi tiết"
     )
 
     fun get(lang: String): AppStrings {
