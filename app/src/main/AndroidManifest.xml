@@ -4,6 +4,7 @@
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
@@ -27,7 +28,12 @@
         <!-- Foreground Service chạy nền theo dõi sạc -->
         <service
             android:name=".service.ChargingForegroundService"
-            android:exported="false" />
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Charging monitor and progress tracker" />
+        </service>
 
         <!-- BroadcastReceiver nhận sự kiện cắm/rút sạc khi app không chạy -->
         <receiver

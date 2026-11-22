@@ -1,54 +1,50 @@
 package com.example.simplecharge.service
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ServiceInfo
 import android.os.BatteryManager
-import android.os.Handler
+import android.os.Build
 import android.os.IBinder
-import android.os.Looper
-import androidx.core.app.NotificationCompat
-import com.example.simplecharge.MainActivity
+import android.util.Log
+import androidx.core.app.ServiceCompat
 import com.example.simplecharge.data.SessionManager
+import com.example.simplecharge.util.NotificationHelper
 
 class ChargingForegroundService : Service() {
 
     companion object {
-        const val CHANNEL_ID = "simplecharge_charging_channel"
-        const val NOTIFICATION_ID = 1001
-        const val NOTIFICATION_ID_TARGET = 1002
+        const val TAG = "ChargingFgService"
         const val ACTION_STOP_SERVICE = "com.example.simplecharge.STOP_SERVICE"
         const val ACTION_SESSION_CHANGED = "com.example.simplecharge.SESSION_CHANGED"
 
         fun start(context: Context) {
-            val intent = Intent(context, ChargingForegroundService::class.java)
-            context.startForegroundService(intent)
+            try {
+                val intent = Intent(context, ChargingForegroundService::class.java)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Cannot startForegroundService (restricted by OS): ${e.message}")
+                NotificationHelper.showChargingNotification(context)
+            }
         }
 
         fun stop(context: Context) {
-            val intent = Intent(context, ChargingForegroundService::class.java)
-            context.stopService(intent)
+            try {
+                val intent = Intent(context, ChargingForegroundService::class.java)
+                context.stopService(intent)
+            } catch (_: Exception) {}
         }
     }
 
     private lateinit var sessionManager: SessionManager
-    private lateinit var notificationManager: NotificationManager
-    private val handler = Handler(Looper.getMainLooper())
     private var isReceiverRegistered = false
-
-    // Ticker: cập nhật notification mỗi giây khi đang sạc
-    private val tickRunnable = object : Runnable {
-        override fun run() {
-            updateNotification()
-            handler.postDelayed(this, 1000L)
-        }
-    }
 
     private val batteryReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -56,48 +52,105 @@ class ChargingForegroundService : Service() {
                 Intent.ACTION_POWER_CONNECTED -> {
                     val pct = getCurrentBatteryPct()
                     sessionManager.startOrResumeSession(pct)
-                    sendBroadcast(Intent(ACTION_SESSION_CHANGED))
-                    updateNotification()
+                    sendBroadcast(Intent(ACTION_SESSION_CHANGED).setPackage(packageName))
+                    NotificationHelper.showChargingNotification(this@ChargingForegroundService)
                 }
                 Intent.ACTION_POWER_DISCONNECTED -> {
-                    // ✅ Tự động finish session khi rút sạc
-                    val active = sessionManager.getActiveSession()
-                    if (active.isActive) {
-                        val pct = getCurrentBatteryPct()
-                        sessionManager.finishSession(pct)
-                        // Thông báo cho UI reload lịch sử
-                        sendBroadcast(Intent(ACTION_SESSION_CHANGED))
-                    }
-                    updateNotification()
+                    // ✅ Tự động hoàn thành session khi rút sạc
+                    handleUnplugged()
                 }
                 Intent.ACTION_BATTERY_CHANGED -> {
+                    val isCharging = isCurrentlyCharging()
+                    if (!isCharging) {
+                        // Nếu pin báo không còn sạc nữa mà session vẫn đang active -> tự động kết thúc
+                        if (sessionManager.hasActiveSession()) {
+                            handleUnplugged()
+                        }
+                        return
+                    }
+
                     val pct = getCurrentBatteryPct()
+                    // Kiểm tra xem pin đã đạt mục tiêu chưa
                     val completed = sessionManager.checkAndHandleBatteryLevel(pct)
                     if (completed != null) {
-                        sendBroadcast(Intent(ACTION_SESSION_CHANGED))
-                        showTargetReachedNotification(pct)
+                        sendBroadcast(Intent(ACTION_SESSION_CHANGED).setPackage(packageName))
+                        NotificationHelper.showTargetReachedNotification(
+                            this@ChargingForegroundService,
+                            pct,
+                            sessionManager.getTargetPct()
+                        )
                     }
-                    updateNotification()
+                    // Cập nhật thông báo tiến trình
+                    NotificationHelper.showChargingNotification(this@ChargingForegroundService)
                 }
             }
         }
     }
 
+    private fun handleUnplugged() {
+        val active = sessionManager.getActiveSession()
+        val pct = getCurrentBatteryPct()
+        val session = if (active.isActive) {
+            sessionManager.finishSession(pct)
+        } else null
+
+        NotificationHelper.showDisconnectedNotification(this, pct, session)
+        sendBroadcast(Intent(ACTION_SESSION_CHANGED).setPackage(packageName))
+        stopSelf()
+    }
+
     override fun onCreate() {
         super.onCreate()
         sessionManager = SessionManager(this)
-        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        createNotificationChannel()
+        NotificationHelper.createNotificationChannel(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP_SERVICE) {
+            NotificationHelper.cancelNotification(this)
+            stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY
         }
 
-        startForeground(NOTIFICATION_ID, buildNotification())
+        // Bắt đầu Foreground Service với notification chuẩn
+        try {
+            val session = sessionManager.getActiveSession()
+            val target = sessionManager.getTargetPct()
+            val batteryPct = getCurrentBatteryPct()
+            val isCharging = isCurrentlyCharging()
+            val plugType = getCurrentPlugType(isCharging)
 
+            val notification = NotificationHelper.buildChargingNotification(
+                context = this,
+                batteryPct = batteryPct,
+                targetPct = target,
+                isCharging = isCharging,
+                startTimeMs = if (session.isActive) session.startTimeMs else 0L,
+                startLevel = if (session.isActive) session.startLevel else batteryPct,
+                plugType = plugType
+            )
+
+            val foregroundServiceType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            } else {
+                0
+            }
+
+            ServiceCompat.startForeground(
+                this,
+                NotificationHelper.NOTIFICATION_ID,
+                notification,
+                foregroundServiceType
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "startForeground error: ${e.message}", e)
+            NotificationHelper.showChargingNotification(this)
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
+        // Đăng ký nhận sự kiện thay đổi pin trong lúc sạc
         if (!isReceiverRegistered) {
             val filter = IntentFilter().apply {
                 addAction(Intent.ACTION_POWER_CONNECTED)
@@ -108,118 +161,20 @@ class ChargingForegroundService : Service() {
             isReceiverRegistered = true
         }
 
-        handler.removeCallbacks(tickRunnable)
-        handler.post(tickRunnable)
-
         return START_STICKY
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        handler.removeCallbacks(tickRunnable)
         if (isReceiverRegistered) {
-            try { unregisterReceiver(batteryReceiver) } catch (_: Exception) {}
+            try {
+                unregisterReceiver(batteryReceiver)
+            } catch (_: Exception) {}
             isReceiverRegistered = false
         }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
-
-    // ─── Notification ──────────────────────────────────────────────────────
-
-    private fun createNotificationChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "SimpleCharge — Theo dõi sạc",
-            NotificationManager.IMPORTANCE_LOW
-        ).apply {
-            description = "Hiển thị tiến trình sạc pin theo thời gian thực"
-            setShowBadge(false)
-        }
-        notificationManager.createNotificationChannel(channel)
-    }
-
-    private fun buildNotification(): Notification {
-        val batteryPct = getCurrentBatteryPct()
-        val isCharging = isCurrentlyCharging()
-        val active = sessionManager.getActiveSession()
-        val target = sessionManager.getTargetPct()
-
-        val openAppPi = PendingIntent.getActivity(
-            this, 0,
-            Intent(this, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val stopPi = PendingIntent.getService(
-            this, 1,
-            Intent(this, ChargingForegroundService::class.java).apply {
-                action = ACTION_STOP_SERVICE
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val titleText = when {
-            isCharging && batteryPct >= target -> "✅ Đã đạt mục tiêu — $batteryPct%"
-            isCharging -> "⚡ Đang sạc — $batteryPct% / $target%"
-            else -> "🔌 Đã rút sạc — $batteryPct%"
-        }
-
-        val contentText = if (active.isActive) {
-            val elapsedMs = (System.currentTimeMillis() - active.startTimeMs).coerceAtLeast(0L)
-            val gained = (batteryPct - active.startLevel).coerceAtLeast(0)
-            val elapsedStr = formatDuration(elapsedMs)
-            "⏱ $elapsedStr  •  +$gained%  •  Mục tiêu: ${active.targetPct}%"
-        } else if (!isCharging) {
-            "Cắm sạc để bắt đầu theo dõi phiên mới"
-        } else {
-            "Đang sạc — Mục tiêu: $target%"
-        }
-
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_charging)
-            .setContentTitle(titleText)
-            .setContentText(contentText)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(contentText))
-            .setProgress(100, batteryPct.coerceIn(0, 100), false)
-            .setContentIntent(openAppPi)
-            .setOngoing(isCharging)
-            .setSilent(true)
-            .addAction(
-                android.R.drawable.ic_menu_close_clear_cancel,
-                "Dừng theo dõi",
-                stopPi
-            )
-            .build()
-    }
-
-    private fun updateNotification() {
-        notificationManager.notify(NOTIFICATION_ID, buildNotification())
-    }
-
-    private fun showTargetReachedNotification(batteryPct: Int) {
-        val target = sessionManager.getTargetPct()
-        val openAppPi = PendingIntent.getActivity(
-            this, 2,
-            Intent(this, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        val n = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_charging)
-            .setContentTitle("✅ Đã đạt mục tiêu sạc!")
-            .setContentText("Pin đạt $batteryPct% (mục tiêu $target%) — Có thể rút sạc ngay!")
-            .setContentIntent(openAppPi)
-            .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .build()
-        notificationManager.notify(NOTIFICATION_ID_TARGET, n)
-    }
-
-    // ─── Battery helpers ───────────────────────────────────────────────────
 
     private fun getCurrentBatteryPct(): Int {
         val bs = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
@@ -235,11 +190,9 @@ class ChargingForegroundService : Service() {
                 status == BatteryManager.BATTERY_STATUS_FULL
     }
 
-    private fun formatDuration(ms: Long): String {
-        val totalSecs = (ms / 1000).coerceAtLeast(0)
-        val h = totalSecs / 3600
-        val m = (totalSecs % 3600) / 60
-        val s = totalSecs % 60
-        return if (h > 0) "%02d:%02d:%02d".format(h, m, s) else "%02d:%02d".format(m, s)
+    private fun getCurrentPlugType(isCharging: Boolean): String {
+        val bs = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val chargePlug = bs?.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) ?: -1
+        return NotificationHelper.parsePlugType(chargePlug, isCharging)
     }
 }

@@ -20,6 +20,7 @@ import com.example.simplecharge.data.SessionManager
 import com.example.simplecharge.service.ChargingForegroundService
 import com.example.simplecharge.ui.SimpleChargeApp
 import com.example.simplecharge.ui.theme.SimpleChargeTheme
+import com.example.simplecharge.util.NotificationHelper
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
@@ -49,7 +50,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Receiver nhận broadcast từ ChargingForegroundService khi có sự kiện (auto-finish, target reached)
+    // Receiver nhận broadcast từ Service/BatteryReceiver khi có sự kiện (auto-finish, target reached)
     private val sessionChangedReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == ChargingForegroundService.ACTION_SESSION_CHANGED) {
@@ -70,6 +71,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         sessionManager = SessionManager(this)
+        NotificationHelper.createNotificationChannel(this)
 
         targetPctState.intValue = sessionManager.getTargetPct()
         languageState.value = sessionManager.getLanguage()
@@ -92,10 +94,10 @@ class MainActivity : ComponentActivity() {
                 val elapsedMs by elapsedMsState
                 val recentSessions by recentSessionsState
 
-                // Coroutine ticker: cập nhật elapsed time mỗi giây
+                // Coroutine ticker: cập nhật elapsed time mỗi giây CHỈ KHI ĐANG CẮM SẠC & SESSION ĐANG ACTIVE
                 LaunchedEffect(isCharging, activeSession.isActive) {
                     while (true) {
-                        if (activeSession.isActive) {
+                        if (isCharging && activeSession.isActive) {
                             elapsedMsState.longValue = (System.currentTimeMillis() - activeSession.startTimeMs).coerceAtLeast(0L)
                         } else {
                             elapsedMsState.longValue = 0L
@@ -125,12 +127,19 @@ class MainActivity : ComponentActivity() {
                         targetPctState.intValue = newTarget
                         sessionManager.setTargetPct(newTarget)
                         activeSessionState.value = sessionManager.getActiveSession()
+                        if (isChargingState.value) {
+                            NotificationHelper.showChargingNotification(this@MainActivity)
+                        }
                     },
                     onFinishSession = {
                         val session = sessionManager.finishSession(batteryPct)
                         if (session != null) {
                             recentSessionsState.value = sessionManager.getRecentSessions()
+                            NotificationHelper.showDisconnectedNotification(this@MainActivity, batteryPct, session)
+                        } else {
+                            NotificationHelper.cancelNotification(this@MainActivity)
                         }
+                        ChargingForegroundService.stop(this@MainActivity)
                         activeSessionState.value = sessionManager.getActiveSession()
                         elapsedMsState.longValue = 0L
                     },
@@ -138,6 +147,9 @@ class MainActivity : ComponentActivity() {
                         val session = sessionManager.resetActiveSession(batteryPct)
                         activeSessionState.value = session
                         elapsedMsState.longValue = 0L
+                        if (isChargingState.value) {
+                            NotificationHelper.showChargingNotification(this@MainActivity)
+                        }
                     },
                     onSimulateLevelStep = { step ->
                         simulatedBonusLevel += step
@@ -154,7 +166,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Đăng ký battery receiver khi app ở foreground
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_BATTERY_CHANGED)
             addAction(Intent.ACTION_POWER_CONNECTED)
@@ -162,14 +173,17 @@ class MainActivity : ComponentActivity() {
         }
         registerReceiver(batteryReceiver, filter)
 
-        // Đăng ký receiver nhận SESSION_CHANGED từ service
         if (!sessionReceiverRegistered) {
             val sessionFilter = IntentFilter(ChargingForegroundService.ACTION_SESSION_CHANGED)
-            registerReceiver(sessionChangedReceiver, sessionFilter, RECEIVER_NOT_EXPORTED)
+            ContextCompat.registerReceiver(
+                this,
+                sessionChangedReceiver,
+                sessionFilter,
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
             sessionReceiverRegistered = true
         }
 
-        // Reload state khi quay lại app (service có thể đã thay đổi session)
         reloadSessionState()
         updateBatteryInfo()
     }
@@ -183,16 +197,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────
-
-    /**
-     * Reload toàn bộ session state từ SessionManager (SharedPreferences).
-     * Gọi khi: app resume, nhận SESSION_CHANGED broadcast.
-     */
     private fun reloadSessionState() {
         activeSessionState.value = sessionManager.getActiveSession()
         recentSessionsState.value = sessionManager.getRecentSessions()
-        if (!activeSessionState.value.isActive) {
+        if (!activeSessionState.value.isActive || !isChargingState.value) {
             elapsedMsState.longValue = 0L
         }
     }
@@ -210,12 +218,8 @@ class MainActivity : ComponentActivity() {
                 status == BatteryManager.BATTERY_STATUS_FULL
 
         val chargePlug = batteryStatus?.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) ?: -1
-        val plugType = when (chargePlug) {
-            BatteryManager.BATTERY_PLUGGED_AC -> "AC Fast"
-            BatteryManager.BATTERY_PLUGGED_USB -> "USB"
-            BatteryManager.BATTERY_PLUGGED_WIRELESS -> "Wireless"
-            else -> if (isCharging) "Charging" else "Unplugged"
-        }
+        val plugType = NotificationHelper.parsePlugType(chargePlug, isCharging)
+
         isChargingState.value = isCharging
         plugTypeState.value = plugType
 
@@ -232,7 +236,7 @@ class MainActivity : ComponentActivity() {
         } else null
         currentMaState.value = currentMa
 
-        // Session logic (khi app ở foreground)
+        // Session logic
         if (isCharging) {
             val session = sessionManager.startOrResumeSession(effectivePct)
             activeSessionState.value = session
@@ -241,24 +245,26 @@ class MainActivity : ComponentActivity() {
             if (completed != null) {
                 recentSessionsState.value = sessionManager.getRecentSessions()
                 activeSessionState.value = sessionManager.getActiveSession()
+                NotificationHelper.showTargetReachedNotification(this, effectivePct, targetPctState.intValue)
             }
         } else {
-            // Rút sạc khi app đang mở: auto-finish nếu có session active
+            // ✅ Tự động finish session khi rút sạc (khi app đang mở)
             val active = sessionManager.getActiveSession()
             if (active.isActive) {
                 val session = sessionManager.finishSession(effectivePct)
                 if (session != null) {
                     recentSessionsState.value = sessionManager.getRecentSessions()
+                    NotificationHelper.showDisconnectedNotification(this, effectivePct, session)
                 }
+                ChargingForegroundService.stop(this)
                 activeSessionState.value = sessionManager.getActiveSession()
                 elapsedMsState.longValue = 0L
             } else {
                 activeSessionState.value = sessionManager.getActiveSession()
+                elapsedMsState.longValue = 0L
             }
         }
     }
-
-    // ─── Notification permission & service ────────────────────────────────
 
     private fun requestNotificationPermissionAndStartService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -278,8 +284,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startChargingServiceIfNeeded() {
-        // Khởi động foreground service khi đang sạc
         if (isChargingState.value) {
+            NotificationHelper.showChargingNotification(this)
             ChargingForegroundService.start(this)
         }
     }

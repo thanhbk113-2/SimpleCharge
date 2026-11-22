@@ -6,10 +6,11 @@ import android.content.Intent
 import android.os.BatteryManager
 import com.example.simplecharge.data.SessionManager
 import com.example.simplecharge.service.ChargingForegroundService
+import com.example.simplecharge.util.NotificationHelper
 
 /**
- * BatteryReceiver — kích hoạt khi app không chạy foreground.
- * Khi app đang chạy foreground service, service tự xử lý các event này.
+ * BatteryReceiver — Lắng nghe sự kiện cắm/rút sạc từ hệ thống Android
+ * kể cả khi app đang tắt hoặc chạy nền.
  */
 class BatteryReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -20,18 +21,40 @@ class BatteryReceiver : BroadcastReceiver() {
             Intent.ACTION_POWER_CONNECTED -> {
                 val pct = getBatteryPct(context)
                 sessionManager.startOrResumeSession(pct)
-                // Khởi động foreground service để hiện notification
+
+                // 1. Hiển thị thông báo ngay lập tức trên thanh thông báo
+                NotificationHelper.showChargingNotification(context)
+
+                // 2. Khởi động service chạy nền (an toàn với try-catch trong service)
                 ChargingForegroundService.start(context)
+
+                // 3. Thông báo cho MainActivity nếu đang mở
+                context.sendBroadcast(
+                    Intent(ChargingForegroundService.ACTION_SESSION_CHANGED)
+                        .setPackage(context.packageName)
+                )
             }
             Intent.ACTION_POWER_DISCONNECTED -> {
-                // ✅ Tự động finish session khi rút sạc
+                // ✅ 1. Tự động finish session khi rút sạc
                 val active = sessionManager.getActiveSession()
-                if (active.isActive) {
-                    val pct = getBatteryPct(context)
+                val pct = getBatteryPct(context)
+                val session = if (active.isActive) {
                     sessionManager.finishSession(pct)
-                    context.sendBroadcast(Intent(ChargingForegroundService.ACTION_SESSION_CHANGED))
+                } else {
+                    null
                 }
-                // Service sẽ tự dừng khi nhận POWER_DISCONNECTED
+
+                // 2. Cập nhật thông báo kết quả sạc
+                NotificationHelper.showDisconnectedNotification(context, pct, session)
+
+                // 3. Dừng foreground service
+                ChargingForegroundService.stop(context)
+
+                // 4. Thông báo cho MainActivity cập nhật lại danh sách lịch sử
+                context.sendBroadcast(
+                    Intent(ChargingForegroundService.ACTION_SESSION_CHANGED)
+                        .setPackage(context.packageName)
+                )
             }
         }
     }

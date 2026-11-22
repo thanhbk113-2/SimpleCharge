@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:2:1-44:12
-INJECTED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:2:1-44:12
-INJECTED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:2:1-44:12
-INJECTED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:2:1-44:12
+ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:2:1-50:12
+INJECTED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:2:1-50:12
+INJECTED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:2:1-50:12
+INJECTED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:2:1-50:12
 MERGED from [androidx.compose.material3:material3-android:1.2.1] C:\Users\thanh-win10\.gradle\caches\8.8\transforms\da857ae9a11d5fddb7e5789f725d8e0b\transformed\material3-release\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.compose.material:material-android:1.6.6] C:\Users\thanh-win10\.gradle\caches\8.8\transforms\a85fe2752ccacf87ffef43e00f9112f8\transformed\material-release\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.compose.material:material-icons-core-android:1.6.6] C:\Users\thanh-win10\.gradle\caches\8.8\transforms\ed4bfef7672da8ee82eb39b555fd25ae\transformed\material-icons-core-release\AndroidManifest.xml:2:1-7:12
@@ -64,13 +64,17 @@ uses-permission#android.permission.FOREGROUND_SERVICE
 ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:6:5-77
 	android:name
 		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:6:22-74
-uses-permission#android.permission.POST_NOTIFICATIONS
-ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:7:5-77
+uses-permission#android.permission.FOREGROUND_SERVICE_SPECIAL_USE
+ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:7:5-89
 	android:name
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:7:22-74
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:7:22-86
+uses-permission#android.permission.POST_NOTIFICATIONS
+ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:8:5-77
+	android:name
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:8:22-74
 application
-ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:9:5-42:19
-INJECTED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:9:5-42:19
+ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:10:5-48:19
+INJECTED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:10:5-48:19
 MERGED from [androidx.compose.ui:ui-tooling-android:1.6.6] C:\Users\thanh-win10\.gradle\caches\8.8\transforms\6a8d22fba071e2bacedb6e83df8081c7\transformed\ui-tooling-release\AndroidManifest.xml:22:5-26:19
 MERGED from [androidx.compose.ui:ui-tooling-android:1.6.6] C:\Users\thanh-win10\.gradle\caches\8.8\transforms\6a8d22fba071e2bacedb6e83df8081c7\transformed\ui-tooling-release\AndroidManifest.xml:22:5-26:19
 MERGED from [androidx.compose.ui:ui-test-manifest:1.6.6] C:\Users\thanh-win10\.gradle\caches\8.8\transforms\44314c5de4c3091ef74a4fda3907c659\transformed\ui-test-manifest-1.6.6\AndroidManifest.xml:22:5-26:19
@@ -92,57 +96,65 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\thanh-win10\.gradl
 	android:appComponentFactory
 		ADDED from [androidx.core:core:1.12.0] C:\Users\thanh-win10\.gradle\caches\8.8\transforms\a114af433340c2b2dce4b833e258a418\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
 	android:supportsRtl
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:14:9-35
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:15:9-35
 	android:label
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:12:9-41
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:13:9-41
 	android:roundIcon
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:13:9-48
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:14:9-48
 	android:icon
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:11:9-43
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:12:9-43
 	android:allowBackup
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:10:9-35
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:11:9-35
 	android:theme
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:15:9-50
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:16:9-50
 activity#com.example.simplecharge.MainActivity
-ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:17:9-25:20
+ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:18:9-26:20
 	android:exported
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:19:13-36
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:20:13-36
 	android:theme
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:20:13-54
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:21:13-54
 	android:name
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:18:13-41
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:19:13-41
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:21:13-24:29
+ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:22:13-25:29
 action#android.intent.action.MAIN
-ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:22:17-69
+ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:23:17-69
 	android:name
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:22:25-66
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:23:25-66
 category#android.intent.category.LAUNCHER
-ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:23:17-77
+ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:24:17-77
 	android:name
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:23:27-74
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:24:27-74
 service#com.example.simplecharge.service.ChargingForegroundService
-ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:28:9-30:40
+ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:29:9-36:19
 	android:exported
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:30:13-37
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:31:13-37
+	android:foregroundServiceType
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:32:13-55
 	android:name
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:29:13-62
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:30:13-62
+property#android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE
+ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:33:13-35:73
+	android:value
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:35:17-70
+	android:name
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:34:17-76
 receiver#com.example.simplecharge.receiver.BatteryReceiver
-ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:33:9-40:20
+ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:39:9-46:20
 	android:exported
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:35:13-36
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:41:13-36
 	android:name
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:34:13-53
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:40:13-53
 intent-filter#action:name:android.intent.action.ACTION_POWER_CONNECTED+action:name:android.intent.action.ACTION_POWER_DISCONNECTED
-ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:36:13-39:29
+ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:42:13-45:29
 action#android.intent.action.ACTION_POWER_CONNECTED
-ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:37:17-87
+ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:43:17-87
 	android:name
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:37:25-84
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:43:25-84
 action#android.intent.action.ACTION_POWER_DISCONNECTED
-ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:38:17-90
+ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:44:17-90
 	android:name
-		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:38:25-87
+		ADDED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml:44:25-87
 uses-sdk
 INJECTED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from C:\Users\thanh-win10\Desktop\Dự án code\SimpleCharge\app\src\main\AndroidManifest.xml
