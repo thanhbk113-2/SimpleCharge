@@ -869,11 +869,18 @@ fun TestControlsCard(
                         disabledContainerColor = Slate700
                     ),
                     shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(strings.finishAndSave, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = strings.finishAndSave,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false
+                    )
                 }
 
                 OutlinedButton(
@@ -883,11 +890,18 @@ fun TestControlsCard(
                     ),
                     border = androidx.compose.foundation.BorderStroke(1.dp, Slate600),
                     shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(strings.resetTimer, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = strings.resetTimer,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false
+                    )
                 }
             }
 
@@ -945,6 +959,7 @@ fun RecentSessionsCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
+                    modifier = Modifier.weight(1f, fill = false),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
@@ -957,50 +972,68 @@ fun RecentSessionsCard(
                     Text(
                         text = strings.recentSessionsTitle,
                         style = MaterialTheme.typography.labelSmall.copy(
-                            letterSpacing = 1.sp,
+                            letterSpacing = 0.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = Slate400
-                        )
+                        ),
+                        maxLines = 1
                     )
                 }
 
+                Spacer(modifier = Modifier.width(8.dp))
+
                 // Action buttons on top right depending on tab
                 if (selectedTab == 0 && recentSessions.isNotEmpty()) {
-                    Text(
-                        text = strings.clear,
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            color = Slate400,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .clickable { onClearHistory() }
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Slate700.copy(alpha = 0.5f),
+                        modifier = Modifier.clickable { onClearHistory() }
+                    ) {
+                        Text(
+                            text = strings.clear,
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                color = Slate300,
+                                fontWeight = FontWeight.Medium
+                            ),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            maxLines = 1
+                        )
+                    }
                 } else if (selectedTab == 1 && deletedSessions.isNotEmpty()) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = strings.restoreAll,
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                color = Emerald400,
-                                fontWeight = FontWeight.Medium
-                            ),
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .clickable { onRestoreAllSessions() }
-                                .padding(horizontal = 6.dp, vertical = 4.dp)
-                        )
-                        Text(
-                            text = strings.emptyTrash,
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                color = Red400,
-                                fontWeight = FontWeight.Medium
-                            ),
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .clickable { showEmptyTrashDialog = true }
-                                .padding(horizontal = 6.dp, vertical = 4.dp)
-                        )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = Emerald500.copy(alpha = 0.15f),
+                            modifier = Modifier.clickable { onRestoreAllSessions() }
+                        ) {
+                            Text(
+                                text = strings.restoreAll,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = Emerald400,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+                                maxLines = 1
+                            )
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = Red500.copy(alpha = 0.15f),
+                            modifier = Modifier.clickable { showEmptyTrashDialog = true }
+                        ) {
+                            Text(
+                                text = strings.emptyTrash,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = Red400,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+                                maxLines = 1
+                            )
+                        }
                     }
                 }
             }

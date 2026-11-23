@@ -155,7 +155,7 @@ object Localization {
         customTargetSubtitle = "Bộ đếm sẽ ghi nhận thời lượng khi đạt mức này",
         sessionTestingTitle = "CÔNG CỤ THỬ NGHIỆM",
         sessionTestingSubtitle = "Công cụ thủ công để kiểm tra bộ đếm giờ, đạt mục tiêu và lưu lịch sử mà không cần chờ lâu.",
-        finishAndSave = "Lưu phiên sạc",
+        finishAndSave = "Lưu phiên",
         resetTimer = "Đặt lại giờ",
         simulateJump = "Giả lập +5% pin (Thử nghiệm)",
         recentSessionsTitle = "LỊCH SỬ SẠC GẦN ĐÂY",
