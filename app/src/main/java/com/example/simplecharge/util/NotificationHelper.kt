@@ -75,7 +75,8 @@ object NotificationHelper {
         isCharging: Boolean,
         startTimeMs: Long = 0L,
         startLevel: Int = 0,
-        plugType: String = ""
+        plugType: String = "",
+        autoLaunch: Boolean = false
     ): Notification {
         createNotificationChannel(context)
 
@@ -122,7 +123,13 @@ object NotificationHelper {
             .setContentIntent(openAppPi)
             .setOngoing(isCharging)
             .setOnlyAlertOnce(true)
-            .setSilent(true)
+            .setSilent(!autoLaunch)
+
+        if (autoLaunch && isCharging) {
+            // Tự động bật màn hình và mở app khi cắm sạc
+            builder.setFullScreenIntent(openAppPi, true)
+            builder.setPriority(NotificationCompat.PRIORITY_HIGH)
+        }
 
         // Chỉ đếm giờ khi ĐANG SẠC và có session hợp lệ
         if (startTimeMs > 0 && isCharging) {
@@ -145,13 +152,14 @@ object NotificationHelper {
         return builder.build()
     }
 
-    fun showChargingNotification(context: Context) {
+    fun showChargingNotification(context: Context, triggerAutoLaunch: Boolean = false) {
         if (!hasNotificationPermission(context)) return
 
         try {
             val sessionManager = SessionManager(context)
             val active = sessionManager.getActiveSession()
             val target = sessionManager.getTargetPct()
+            val autoLaunch = triggerAutoLaunch && sessionManager.isAutoLaunchEnabled()
 
             val batteryStatus = context.registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
             val rawLevel = batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: 50
@@ -172,7 +180,8 @@ object NotificationHelper {
                 isCharging = isCharging,
                 startTimeMs = if (active.isActive) active.startTimeMs else 0L,
                 startLevel = if (active.isActive) active.startLevel else pct,
-                plugType = plugType
+                plugType = plugType,
+                autoLaunch = autoLaunch
             )
 
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager

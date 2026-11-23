@@ -40,10 +40,12 @@ fun SimpleChargeApp(
     voltageV: Float,
     targetPct: Int,
     language: String,
+    autoLaunchEnabled: Boolean,
     activeSession: ActiveSessionState,
     elapsedMs: Long,
     recentSessions: List<ChargingSession>,
     onLanguageChanged: (String) -> Unit,
+    onAutoLaunchChanged: (Boolean) -> Unit,
     onTargetPctChanged: (Int) -> Unit,
     onFinishSession: () -> Unit,
     onResetSession: () -> Unit,
@@ -222,8 +224,10 @@ fun SimpleChargeApp(
             item {
                 TargetChargeCard(
                     targetPct = targetPct,
+                    autoLaunchEnabled = autoLaunchEnabled,
                     strings = strings,
-                    onTargetPctChanged = onTargetPctChanged
+                    onTargetPctChanged = onTargetPctChanged,
+                    onAutoLaunchChanged = onAutoLaunchChanged
                 )
             }
 
@@ -604,8 +608,10 @@ fun TimerMetricsCard(
 @Composable
 fun TargetChargeCard(
     targetPct: Int,
+    autoLaunchEnabled: Boolean,
     strings: AppStrings,
-    onTargetPctChanged: (Int) -> Unit
+    onTargetPctChanged: (Int) -> Unit,
+    onAutoLaunchChanged: (Boolean) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -734,6 +740,62 @@ fun TargetChargeCard(
                         )
                     }
                 }
+            }
+
+            HorizontalDivider(
+                color = Slate700,
+                modifier = Modifier.padding(top = 16.dp, bottom = 12.dp)
+            )
+
+            // Tự động mở app khi cắm sạc
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 12.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Launch,
+                            contentDescription = null,
+                            tint = Cyan400,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = strings.autoLaunchOnPlug,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            )
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = strings.autoLaunchOnPlugDesc,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = Slate400,
+                            fontSize = 11.sp
+                        )
+                    )
+                }
+
+                Switch(
+                    checked = autoLaunchEnabled,
+                    onCheckedChange = onAutoLaunchChanged,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = Emerald500,
+                        uncheckedThumbColor = Slate400,
+                        uncheckedTrackColor = Slate700
+                    )
+                )
             }
         }
     }

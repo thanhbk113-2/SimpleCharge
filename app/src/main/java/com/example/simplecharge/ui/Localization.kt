@@ -45,7 +45,23 @@ data class AppStrings(
     val batteryGained: String,
     val chargingDuration: String,
     val close: String,
-    val tapToViewDetails: String
+    val tapToViewDetails: String,
+    val autoLaunchOnPlug: String,
+    val autoLaunchOnPlugDesc: String,
+    // Thùng rác & phục hồi lịch sử
+    val trashTab: String,
+    val activeTab: String,
+    val moveToTrash: String,
+    val restore: String,
+    val restoreAll: String,
+    val deletePermanently: String,
+    val emptyTrash: String,
+    val emptyTrashConfirmTitle: String,
+    val emptyTrashConfirmDesc: String,
+    val confirmDelete: String,
+    val cancel: String,
+    val trashEmpty: String,
+    val trashEmptySubtitle: String
 )
 
 object Localization {
@@ -93,7 +109,22 @@ object Localization {
         batteryGained = "Battery Gained",
         chargingDuration = "Duration",
         close = "Close",
-        tapToViewDetails = "Tap to view chart & stats"
+        tapToViewDetails = "Tap to view chart & stats",
+        autoLaunchOnPlug = "Auto-open app when charging",
+        autoLaunchOnPlugDesc = "Turn on screen and launch app immediately when plugged in",
+        trashTab = "Trash",
+        activeTab = "Saved",
+        moveToTrash = "Delete",
+        restore = "Restore",
+        restoreAll = "Restore All",
+        deletePermanently = "Delete Forever",
+        emptyTrash = "Empty Trash",
+        emptyTrashConfirmTitle = "Empty Trash?",
+        emptyTrashConfirmDesc = "Permanently delete all sessions in trash? This cannot be undone.",
+        confirmDelete = "Delete",
+        cancel = "Cancel",
+        trashEmpty = "Trash is empty",
+        trashEmptySubtitle = "Deleted sessions will stay here so you can restore them anytime."
     )
 
     val Vietnamese = AppStrings(
@@ -140,7 +171,22 @@ object Localization {
         batteryGained = "Mức pin nạp được",
         chargingDuration = "Thời gian sạc",
         close = "Đóng",
-        tapToViewDetails = "Chạm để xem biểu đồ & chi tiết"
+        tapToViewDetails = "Chạm để xem biểu đồ & chi tiết",
+        autoLaunchOnPlug = "Tự động mở app khi cắm sạc",
+        autoLaunchOnPlugDesc = "Bật sáng màn hình và mở ứng dụng ngay khi cắm sạc pin",
+        trashTab = "Thùng rác",
+        activeTab = "Đã lưu",
+        moveToTrash = "Xóa",
+        restore = "Khôi phục",
+        restoreAll = "Khôi phục tất cả",
+        deletePermanently = "Xóa vĩnh viễn",
+        emptyTrash = "Dọn sạch thùng rác",
+        emptyTrashConfirmTitle = "Dọn sạch thùng rác?",
+        emptyTrashConfirmDesc = "Xóa vĩnh viễn tất cả phiên sạc trong thùng rác? Bạn sẽ không thể phục hồi lại.",
+        confirmDelete = "Xóa vĩnh viễn",
+        cancel = "Hủy",
+        trashEmpty = "Thùng rác trống",
+        trashEmptySubtitle = "Các phiên sạc đã xóa sẽ lưu ở đây để bạn có thể khôi phục lại bất cứ lúc nào."
     )
 
     fun get(lang: String): AppStrings {

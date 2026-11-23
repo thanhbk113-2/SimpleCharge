@@ -21,6 +21,8 @@ class SessionManager(context: Context) {
         private const val KEY_ACTIVE_REACHED = "active_reached"
         private const val KEY_ACTIVE_DATA_POINTS = "active_data_points"
         private const val KEY_COMPLETED_SESSIONS = "completed_sessions"
+        private const val KEY_DELETED_SESSIONS = "deleted_sessions"
+        private const val KEY_AUTO_LAUNCH = "auto_launch_on_plug"
 
         const val DEFAULT_TARGET_PCT = 90
         const val DEFAULT_LANGUAGE = "en"
@@ -34,6 +36,14 @@ class SessionManager(context: Context) {
 
     fun setLanguage(lang: String) {
         prefs.edit().putString(KEY_LANGUAGE, lang).apply()
+    }
+
+    fun isAutoLaunchEnabled(): Boolean {
+        return prefs.getBoolean(KEY_AUTO_LAUNCH, true)
+    }
+
+    fun setAutoLaunchEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_AUTO_LAUNCH, enabled).apply()
     }
 
     fun getTargetPct(): Int {
@@ -236,5 +246,121 @@ class SessionManager(context: Context) {
 
     fun clearHistory() {
         prefs.edit().remove(KEY_COMPLETED_SESSIONS).apply()
+    }
+
+    // ─── Quản lý thùng rác (Deleted Sessions) ────────────────────────────────
+
+    fun getDeletedSessions(): List<ChargingSession> {
+        val raw = prefs.getString(KEY_DELETED_SESSIONS, null) ?: return emptyList()
+        val list = mutableListOf<ChargingSession>()
+        try {
+            val array = JSONArray(raw)
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                list.add(ChargingSession.fromJson(obj))
+            }
+        } catch (_: Exception) {}
+        return list
+    }
+
+    private fun saveDeletedSessions(list: List<ChargingSession>) {
+        val trimmed = list.take(30)
+        val array = JSONArray()
+        for (item in trimmed) {
+            array.put(item.toJson())
+        }
+        prefs.edit().putString(KEY_DELETED_SESSIONS, array.toString()).apply()
+    }
+
+    private fun saveActiveSessions(list: List<ChargingSession>) {
+        val trimmed = list.take(30)
+        val array = JSONArray()
+        for (item in trimmed) {
+            array.put(item.toJson())
+        }
+        prefs.edit().putString(KEY_COMPLETED_SESSIONS, array.toString()).apply()
+    }
+
+    /**
+     * Chuyển 1 phiên sạc vào thùng rác
+     */
+    fun moveToTrash(sessionId: String): ChargingSession? {
+        val activeList = getRecentSessions().toMutableList()
+        val target = activeList.find { it.id == sessionId } ?: return null
+        activeList.removeAll { it.id == sessionId }
+        saveActiveSessions(activeList)
+
+        val trash = getDeletedSessions().toMutableList()
+        trash.add(0, target)
+        saveDeletedSessions(trash)
+        return target
+    }
+
+    /**
+     * Chuyển tất cả các phiên sạc hiện tại vào thùng rác
+     */
+    fun moveAllToTrash(): Int {
+        val activeList = getRecentSessions()
+        if (activeList.isEmpty()) return 0
+
+        val count = activeList.size
+        val trash = getDeletedSessions().toMutableList()
+        trash.addAll(0, activeList)
+        saveDeletedSessions(trash)
+
+        prefs.edit().remove(KEY_COMPLETED_SESSIONS).apply()
+        return count
+    }
+
+    /**
+     * Phục hồi 1 phiên sạc từ thùng rác về lại danh sách chính
+     */
+    fun restoreSession(sessionId: String): ChargingSession? {
+        val trash = getDeletedSessions().toMutableList()
+        val target = trash.find { it.id == sessionId } ?: return null
+        trash.removeAll { it.id == sessionId }
+        saveDeletedSessions(trash)
+
+        val activeList = getRecentSessions().toMutableList()
+        activeList.add(0, target)
+        activeList.sortByDescending { it.endTimeMs }
+        saveActiveSessions(activeList)
+        return target
+    }
+
+    /**
+     * Phục hồi toàn bộ các phiên sạc trong thùng rác
+     */
+    fun restoreAllSessions(): Int {
+        val trash = getDeletedSessions()
+        if (trash.isEmpty()) return 0
+
+        val count = trash.size
+        val activeList = getRecentSessions().toMutableList()
+        activeList.addAll(0, trash)
+        activeList.sortByDescending { it.endTimeMs }
+        saveActiveSessions(activeList)
+
+        prefs.edit().remove(KEY_DELETED_SESSIONS).apply()
+        return count
+    }
+
+    /**
+     * Xóa vĩnh viễn 1 phiên sạc khỏi thùng rác
+     */
+    fun permanentlyDeleteSession(sessionId: String): Boolean {
+        val trash = getDeletedSessions().toMutableList()
+        val removed = trash.removeAll { it.id == sessionId }
+        if (removed) {
+            saveDeletedSessions(trash)
+        }
+        return removed
+    }
+
+    /**
+     * Xóa vĩnh viễn toàn bộ thùng rác 1 lần
+     */
+    fun clearTrash() {
+        prefs.edit().remove(KEY_DELETED_SESSIONS).apply()
     }
 }

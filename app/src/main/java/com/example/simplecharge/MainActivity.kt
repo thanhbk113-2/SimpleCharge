@@ -36,9 +36,11 @@ class MainActivity : ComponentActivity() {
     private var voltageVState = mutableFloatStateOf(0f)
     private var targetPctState = mutableIntStateOf(90)
     private var languageState = mutableStateOf("en")
+    private var autoLaunchState = mutableStateOf(true)
     private var activeSessionState = mutableStateOf(ActiveSessionState())
     private var elapsedMsState = mutableLongStateOf(0L)
     private var recentSessionsState = mutableStateOf<List<ChargingSession>>(emptyList())
+    private var deletedSessionsState = mutableStateOf<List<ChargingSession>>(emptyList())
 
     // For manual simulation in testing
     private var simulatedBonusLevel = 0
@@ -73,9 +75,22 @@ class MainActivity : ComponentActivity() {
         sessionManager = SessionManager(this)
         NotificationHelper.createNotificationChannel(this)
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+            )
+        }
+
         targetPctState.intValue = sessionManager.getTargetPct()
         languageState.value = sessionManager.getLanguage()
+        autoLaunchState.value = sessionManager.isAutoLaunchEnabled()
         recentSessionsState.value = sessionManager.getRecentSessions()
+        deletedSessionsState.value = sessionManager.getDeletedSessions()
 
         updateBatteryInfo()
         requestNotificationPermissionAndStartService()
@@ -90,9 +105,11 @@ class MainActivity : ComponentActivity() {
                 val voltageV by voltageVState
                 val targetPct by targetPctState
                 val language by languageState
+                val autoLaunch by autoLaunchState
                 val activeSession by activeSessionState
                 val elapsedMs by elapsedMsState
                 val recentSessions by recentSessionsState
+                val deletedSessions by deletedSessionsState
 
                 // Coroutine ticker: cập nhật elapsed time mỗi giây CHỈ KHI ĐANG CẮM SẠC & SESSION ĐANG ACTIVE
                 LaunchedEffect(isCharging, activeSession.isActive) {
@@ -116,12 +133,17 @@ class MainActivity : ComponentActivity() {
                     voltageV = voltageV,
                     targetPct = targetPct,
                     language = language,
+                    autoLaunchEnabled = autoLaunch,
                     activeSession = activeSession,
                     elapsedMs = elapsedMs,
                     recentSessions = recentSessions,
                     onLanguageChanged = { newLang ->
                         languageState.value = newLang
                         sessionManager.setLanguage(newLang)
+                    },
+                    onAutoLaunchChanged = { enabled ->
+                        autoLaunchState.value = enabled
+                        sessionManager.setAutoLaunchEnabled(enabled)
                     },
                     onTargetPctChanged = { newTarget ->
                         targetPctState.intValue = newTarget
@@ -200,6 +222,7 @@ class MainActivity : ComponentActivity() {
     private fun reloadSessionState() {
         activeSessionState.value = sessionManager.getActiveSession()
         recentSessionsState.value = sessionManager.getRecentSessions()
+        deletedSessionsState.value = sessionManager.getDeletedSessions()
         if (!activeSessionState.value.isActive || !isChargingState.value) {
             elapsedMsState.longValue = 0L
         }
