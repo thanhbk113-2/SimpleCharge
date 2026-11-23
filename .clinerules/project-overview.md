@@ -9,9 +9,9 @@
 3. **Estimated Time Remaining:** ước tính ban đầu ~1%/phút; sau ≥ 30s và ≥ 1% tăng chuyển sang tốc độ thực (%/giờ).
 4. **Custom Target Charge %:** slider 50–100%, nút ±1%, chip preset 80/85/90/95/100%, lưu cục bộ.
 5. **Language Switcher:** EN/VI trên top bar, lưu qua SharedPreferences, toàn bộ UI localized bằng Kotlin (không dùng string resources Android).
-6. **Charging Session History:** lưu tối đa 30 phiên, hiển thị 5 gần nhất. Chạm vào phiên để xem chi tiết (biểu đồ Canvas, thống kê, Smart Insight).
-7. **Session Testing Controls:** Finish & Save, Reset Timer, Simulate +5% (dùng cho demo/debug).
-8. **Background monitoring:** BroadcastReceiver + Foreground Service theo dõi cắm/rút sạc cả khi app tắt; notification tiến trình và thông báo đạt mục tiêu.
+6. **Charging Session History & Trash:** lưu tối đa 30 phiên, phân loại [Đã lưu | Thùng rác]. Cho phép xóa phiên vào thùng rác, phục hồi từng phiên hoặc phục hồi tất cả, xóa vĩnh viễn từng phiên hoặc xóa sạch thùng rác với hộp thoại xác nhận. Chạm phiên để xem chi tiết (biểu đồ Canvas, thống kê, Smart Insight).
+7. **Session Testing Controls:** Finish & Save, Reset Timer, Simulate +5% (demo/debug).
+8. **Background monitoring & Auto Launch:** BroadcastReceiver (`ACTION_POWER_CONNECTED/DISCONNECTED`, `ACTION_BOOT_COMPLETED`) + Foreground Service theo dõi cắm/rút sạc cả khi app tắt. Tùy chọn tự động bật app khi cắm sạc (Toggle trong app). Notification tiến trình và thông báo đạt mục tiêu.
 
 ## Cấu trúc thư mục (nguồn chính)
 ```
