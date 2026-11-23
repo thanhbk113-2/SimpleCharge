@@ -22,3 +22,4 @@ val Cyan500 = Color(0xFF06B6D4)
 val Cyan400 = Color(0xFF22D3EE)
 
 val Red500 = Color(0xFFEF4444)
+val Red400 = Color(0xFFF87171)

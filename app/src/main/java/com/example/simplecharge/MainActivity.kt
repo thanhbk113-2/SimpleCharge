@@ -137,6 +137,7 @@ class MainActivity : ComponentActivity() {
                     activeSession = activeSession,
                     elapsedMs = elapsedMs,
                     recentSessions = recentSessions,
+                    deletedSessions = deletedSessions,
                     onLanguageChanged = { newLang ->
                         languageState.value = newLang
                         sessionManager.setLanguage(newLang)
@@ -178,8 +179,28 @@ class MainActivity : ComponentActivity() {
                         updateBatteryInfo()
                     },
                     onClearHistory = {
-                        sessionManager.clearHistory()
-                        recentSessionsState.value = emptyList()
+                        sessionManager.moveAllToTrash()
+                        reloadSessionState()
+                    },
+                    onMoveSessionToTrash = { id ->
+                        sessionManager.moveToTrash(id)
+                        reloadSessionState()
+                    },
+                    onRestoreSession = { id ->
+                        sessionManager.restoreSession(id)
+                        reloadSessionState()
+                    },
+                    onRestoreAllSessions = {
+                        sessionManager.restoreAllSessions()
+                        reloadSessionState()
+                    },
+                    onPermanentlyDeleteSession = { id ->
+                        sessionManager.permanentlyDeleteSession(id)
+                        reloadSessionState()
+                    },
+                    onClearTrash = {
+                        sessionManager.clearTrash()
+                        reloadSessionState()
                     }
                 )
             }

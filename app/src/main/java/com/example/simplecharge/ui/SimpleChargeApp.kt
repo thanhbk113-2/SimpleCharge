@@ -44,13 +44,19 @@ fun SimpleChargeApp(
     activeSession: ActiveSessionState,
     elapsedMs: Long,
     recentSessions: List<ChargingSession>,
+    deletedSessions: List<ChargingSession>,
     onLanguageChanged: (String) -> Unit,
     onAutoLaunchChanged: (Boolean) -> Unit,
     onTargetPctChanged: (Int) -> Unit,
     onFinishSession: () -> Unit,
     onResetSession: () -> Unit,
     onSimulateLevelStep: (Int) -> Unit,
-    onClearHistory: () -> Unit
+    onClearHistory: () -> Unit,
+    onMoveSessionToTrash: (String) -> Unit,
+    onRestoreSession: (String) -> Unit,
+    onRestoreAllSessions: () -> Unit,
+    onPermanentlyDeleteSession: (String) -> Unit,
+    onClearTrash: () -> Unit
 ) {
     val strings = remember(language) { Localization.get(language) }
 
@@ -242,12 +248,18 @@ fun SimpleChargeApp(
                 )
             }
 
-            // 5. Recent Charging Sessions
+            // 5. Recent Charging Sessions & Trash
             item {
                 RecentSessionsCard(
                     recentSessions = recentSessions,
+                    deletedSessions = deletedSessions,
                     strings = strings,
-                    onClearHistory = onClearHistory
+                    onClearHistory = onClearHistory,
+                    onMoveSessionToTrash = onMoveSessionToTrash,
+                    onRestoreSession = onRestoreSession,
+                    onRestoreAllSessions = onRestoreAllSessions,
+                    onPermanentlyDeleteSession = onPermanentlyDeleteSession,
+                    onClearTrash = onClearTrash
                 )
             }
         }
@@ -902,10 +914,18 @@ fun TestControlsCard(
 @Composable
 fun RecentSessionsCard(
     recentSessions: List<ChargingSession>,
+    deletedSessions: List<ChargingSession>,
     strings: AppStrings,
-    onClearHistory: () -> Unit
+    onClearHistory: () -> Unit,
+    onMoveSessionToTrash: (String) -> Unit,
+    onRestoreSession: (String) -> Unit,
+    onRestoreAllSessions: () -> Unit,
+    onPermanentlyDeleteSession: (String) -> Unit,
+    onClearTrash: () -> Unit
 ) {
     var selectedSession by remember { mutableStateOf<ChargingSession?>(null) }
+    var selectedTab by remember { mutableIntStateOf(0) } // 0: Active, 1: Trash
+    var showEmptyTrashDialog by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -918,6 +938,7 @@ fun RecentSessionsCard(
                 .fillMaxWidth()
                 .padding(18.dp)
         ) {
+            // Header: Title & Action
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -941,25 +962,10 @@ fun RecentSessionsCard(
                             color = Slate400
                         )
                     )
-                    if (recentSessions.isNotEmpty()) {
-                        Surface(
-                            shape = CircleShape,
-                            color = Slate700,
-                            modifier = Modifier.padding(start = 4.dp)
-                        ) {
-                            Text(
-                                text = "${recentSessions.size}",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = Slate200,
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
                 }
 
-                if (recentSessions.isNotEmpty()) {
+                // Action buttons on top right depending on tab
+                if (selectedTab == 0 && recentSessions.isNotEmpty()) {
                     Text(
                         text = strings.clear,
                         style = MaterialTheme.typography.labelMedium.copy(
@@ -971,80 +977,264 @@ fun RecentSessionsCard(
                             .clickable { onClearHistory() }
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     )
+                } else if (selectedTab == 1 && deletedSessions.isNotEmpty()) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = strings.restoreAll,
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                color = Emerald400,
+                                fontWeight = FontWeight.Medium
+                            ),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .clickable { onRestoreAllSessions() }
+                                .padding(horizontal = 6.dp, vertical = 4.dp)
+                        )
+                        Text(
+                            text = strings.emptyTrash,
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                color = Red400,
+                                fontWeight = FontWeight.Medium
+                            ),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .clickable { showEmptyTrashDialog = true }
+                                .padding(horizontal = 6.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Sub-tabs: [ Saved (N) | Trash (M) ]
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Slate900.copy(alpha = 0.6f))
+                    .padding(3.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // Tab 0: Active History
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (selectedTab == 0) Slate800 else Color.Transparent,
+                    border = if (selectedTab == 0) androidx.compose.foundation.BorderStroke(1.dp, Slate700) else null,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { selectedTab = 0 }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(vertical = 6.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${strings.activeTab} (${recentSessions.size})",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal,
+                                color = if (selectedTab == 0) Cyan400 else Slate400
+                            )
+                        )
+                    }
+                }
+
+                // Tab 1: Trash
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (selectedTab == 1) Slate800 else Color.Transparent,
+                    border = if (selectedTab == 1) androidx.compose.foundation.BorderStroke(1.dp, Slate700) else null,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { selectedTab = 1 }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(vertical = 6.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${strings.trashTab} (${deletedSessions.size})",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal,
+                                color = if (selectedTab == 1) Red400 else Slate400
+                            )
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            if (recentSessions.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Slate900.copy(alpha = 0.4f))
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+            val dateFormat = remember { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()) }
+
+            if (selectedTab == 0) {
+                // TAB 0: Active Sessions
+                if (recentSessions.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Slate900.copy(alpha = 0.4f))
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.PowerOff,
+                                contentDescription = null,
+                                tint = Slate600,
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Text(
+                                text = strings.noCompletedSessions,
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Slate400
+                                )
+                            )
+                            Text(
+                                text = strings.noSessionsSubtitle,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = Slate600,
+                                    textAlign = TextAlign.Center
+                                )
+                            )
+                        }
+                    }
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.padding(bottom = 8.dp)
                     ) {
                         Icon(
-                            Icons.Default.PowerOff,
+                            Icons.Default.TouchApp,
                             contentDescription = null,
-                            tint = Slate600,
-                            modifier = Modifier.size(32.dp)
+                            tint = Cyan400,
+                            modifier = Modifier.size(13.dp)
                         )
                         Text(
-                            text = strings.noCompletedSessions,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                color = Slate400
-                            )
-                        )
-                        Text(
-                            text = strings.noSessionsSubtitle,
+                            text = strings.tapToViewDetails,
                             style = MaterialTheme.typography.bodySmall.copy(
-                                color = Slate600,
-                                textAlign = TextAlign.Center
+                                color = Slate400,
+                                fontSize = 11.sp
                             )
                         )
                     }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        recentSessions.take(10).forEach { session ->
+                            SessionItemView(
+                                session = session,
+                                dateFormat = dateFormat,
+                                isInTrash = false,
+                                strings = strings,
+                                onClick = { selectedSession = session },
+                                onDelete = { onMoveSessionToTrash(session.id) }
+                            )
+                        }
+                    }
                 }
             } else {
-                // Gợi ý chạm để xem biểu đồ
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.padding(bottom = 8.dp)
-                ) {
-                    Icon(
-                        Icons.Default.TouchApp,
-                        contentDescription = null,
-                        tint = Cyan400,
-                        modifier = Modifier.size(13.dp)
-                    )
-                    Text(
-                        text = strings.tapToViewDetails,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = Slate400,
-                            fontSize = 11.sp
-                        )
-                    )
-                }
-
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val dateFormat = remember { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()) }
-                    recentSessions.take(5).forEach { session ->
-                        SessionItemView(
-                            session = session,
-                            dateFormat = dateFormat,
-                            onClick = { selectedSession = session }
-                        )
+                // TAB 1: Trash
+                if (deletedSessions.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Slate900.copy(alpha = 0.4f))
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.DeleteOutline,
+                                contentDescription = null,
+                                tint = Slate600,
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Text(
+                                text = strings.trashEmpty,
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Slate400
+                                )
+                            )
+                            Text(
+                                text = strings.trashEmptySubtitle,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = Slate600,
+                                    textAlign = TextAlign.Center
+                                )
+                            )
+                        }
+                    }
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        deletedSessions.forEach { session ->
+                            SessionItemView(
+                                session = session,
+                                dateFormat = dateFormat,
+                                isInTrash = true,
+                                strings = strings,
+                                onClick = { selectedSession = session },
+                                onRestore = { onRestoreSession(session.id) },
+                                onDeletePermanently = { onPermanentlyDeleteSession(session.id) }
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+
+    // Dialog xác nhận xóa vĩnh viễn toàn bộ thùng rác
+    if (showEmptyTrashDialog) {
+        AlertDialog(
+            onDismissRequest = { showEmptyTrashDialog = false },
+            title = {
+                Text(
+                    text = strings.emptyTrashConfirmTitle,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                )
+            },
+            text = {
+                Text(
+                    text = strings.emptyTrashConfirmDesc,
+                    style = MaterialTheme.typography.bodyMedium.copy(color = Slate300)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onClearTrash()
+                        showEmptyTrashDialog = false
+                    }
+                ) {
+                    Text(text = strings.confirmDelete, color = Red400, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEmptyTrashDialog = false }) {
+                    Text(text = strings.cancel, color = Slate400)
+                }
+            },
+            containerColor = Slate800,
+            shape = RoundedCornerShape(16.dp)
+        )
     }
 
     // Modal Bottom Sheet chi tiết biểu đồ & thống kê
@@ -1061,7 +1251,12 @@ fun RecentSessionsCard(
 fun SessionItemView(
     session: ChargingSession,
     dateFormat: SimpleDateFormat,
-    onClick: () -> Unit
+    isInTrash: Boolean = false,
+    strings: AppStrings,
+    onClick: () -> Unit,
+    onDelete: (() -> Unit)? = null,
+    onRestore: (() -> Unit)? = null,
+    onDeletePermanently: (() -> Unit)? = null
 ) {
     Surface(
         shape = RoundedCornerShape(12.dp),
@@ -1132,7 +1327,7 @@ fun SessionItemView(
                 }
             }
 
-            // Duration + Icon xem biểu đồ
+            // Duration + Actions
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1159,19 +1354,51 @@ fun SessionItemView(
                     }
                 }
 
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .background(Slate800),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.ShowChart,
-                        contentDescription = "Xem biểu đồ",
-                        tint = Cyan400,
-                        modifier = Modifier.size(16.dp)
-                    )
+                if (!isInTrash) {
+                    // Nút xóa phiên này (chuyển vào thùng rác)
+                    onDelete?.let { del ->
+                        IconButton(
+                            onClick = del,
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = strings.moveToTrash,
+                                tint = Slate500,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                } else {
+                    // Trong thùng rác: nút Phục hồi & Xóa vĩnh viễn
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        onRestore?.let { res ->
+                            IconButton(
+                                onClick = res,
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Restore,
+                                    contentDescription = strings.restore,
+                                    tint = Emerald400,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                        onDeletePermanently?.let { delPerm ->
+                            IconButton(
+                                onClick = delPerm,
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.DeleteForever,
+                                    contentDescription = strings.deletePermanently,
+                                    tint = Red400,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
