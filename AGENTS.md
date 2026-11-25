@@ -43,10 +43,10 @@ app/src/main/res/values/themes.xml
 |------|-----------|-----------|
 | MainActivity | `app/.../MainActivity.kt` | Entry point. Giữ toàn bộ UI state (`mutableStateOf`), đăng ký `BroadcastReceiver` trong foreground, ticker cập nhật elapsed time mỗi giây, gọi `SessionManager`, render `SimpleChargeApp`. |
 | ChargingSession | `app/.../data/ChargingSession.kt` | Data model: `ChargingDataPoint`, `ChargingSession` (thời gian, %, dataPoints, tốc độ, nhiệt độ min/max), `ActiveSessionState`. Có JSON serialize/deserialize. |
-| SessionManager | `app/.../data/SessionManager.kt` | Quản lý SharedPreferences (`simple_charge_prefs`): target %, ngôn ngữ, auto launch on connect, active session, data points (tối đa 120 điểm, lọc 60s), lịch sử lưu (tối đa 30 phiên), thùng rác (`deleted_sessions`), start/resume/reset/finish/clear session, move to trash/restore/delete permanently. |
-| BatteryReceiver | `app/.../receiver/BatteryReceiver.kt` | Lắng nghe `ACTION_POWER_CONNECTED` / `ACTION_POWER_DISCONNECTED` và `ACTION_BOOT_COMPLETED` từ hệ thống (kể cả app tắt). Khởi động session, notification, foreground service, tự động mở app nếu bật tuỳ chọn, broadcast session changed. |
-| ChargingForegroundService | `app/.../service/ChargingForegroundService.kt` | Foreground Service (`specialUse`) chạy nền theo dõi pin khi app không mở. Xử lý cắm/rút sạc, kiểm tra đạt mục tiêu, cập nhật notification chronometer. |
-| NotificationHelper | `app/.../util/NotificationHelper.kt` | Tạo notification channel, build thông báo sạc/đạt mục tiêu/rút sạc, parse loại cắm (USB/AC/Wireless), kiểm tra quyền `POST_NOTIFICATIONS`. |
+| SessionManager | `app/.../data/SessionManager.kt` | Quản lý SharedPreferences (`simple_charge_prefs`): target %, ngôn ngữ, auto launch on connect, active session, data points (tối đa 120 điểm, lọc 60s), lịch sử lưu (tối đa 30 phiên), thùng rác (`deleted_sessions`), start/resume/reset/finish/clear session, move to trash/restore/delete permanently. Lọc bỏ phiên rác 0%->0% và chập chờn < 1.5s, tự động dọn session cũ. |
+| BatteryReceiver | `app/.../receiver/BatteryReceiver.kt` | Lắng nghe `ACTION_POWER_CONNECTED` / `ACTION_POWER_DISCONNECTED` và `ACTION_BOOT_COMPLETED` từ hệ thống (kể cả app tắt). Khởi động session, notification, foreground service, tự động mở app nếu bật tuỳ chọn, broadcast session changed. Đọc % pin và sạc qua `NotificationHelper`. |
+| ChargingForegroundService | `app/.../service/ChargingForegroundService.kt` | Foreground Service (`specialUse`) chạy nền theo dõi pin khi app không mở. Xử lý cắm/rút sạc, kiểm tra đạt mục tiêu, cập nhật notification chronometer. Đồng bộ qua `NotificationHelper`. |
+| NotificationHelper | `app/.../util/NotificationHelper.kt` | Tạo notification channel, build thông báo sạc/đạt mục tiêu/rút sạc, parse loại cắm (USB/AC/Wireless), kiểm tra quyền `POST_NOTIFICATIONS`. Cung cấp tiện ích toàn cục `getBatteryPct()` (đọc trực tiếp phần cứng) và `isBatteryCharging()` (kiểm tra `EXTRA_PLUGGED > 0`). |
 | SimpleChargeApp | `app/.../ui/SimpleChargeApp.kt` | Root Composable + tất cả card UI (BatteryStatusCard, TimerMetricsCard, TargetChargeCard, TestControlsCard, RecentSessionsCard). Chứa logic `calculateRemainingEstimate`, `formatDuration`, `SessionItemView`, `ChargingSessionDetailSheet`. |
 | ChargingCurveChart | `app/.../ui/ChargingCurveChart.kt` | Vẽ biểu đồ đường cong sạc bằng `Canvas` (gradient fill, cubicTo, tương tác chạm kéo), `ChargingSessionDetailSheet` Modal Bottom Sheet, `buildSmartInsight`. |
 | Localization | `app/.../ui/Localization.kt` | Định nghĩa `AppStrings` và bản dịch EN/VI (pure Kotlin). |
@@ -62,7 +62,9 @@ app/src/main/res/values/themes.xml
 5. **Persistence:** `targetPct`, `language`, `auto_launch_on_charging`, `activeSession`, `dataPoints`, `completedSessions`, `deletedSessions` đều lưu trong SharedPreferences qua `SessionManager`.
 
 ## Trạng thái hiện tại & Việc còn dang dở
-- **Trạng thái:** Các tính năng chính (theo dõi sạc real-time, notification & foreground service, biểu đồ đường cong sạc Canvas, tự khởi động lại qua boot completed, thùng rác khôi phục lịch sử) đã hoàn tất và chạy ổn định trên Android 14/15/16 (Oppo Find X8).
+- **Trạng thái:**
+  - Các tính năng chính (theo dõi sạc real-time, notification & foreground service, biểu đồ đường cong sạc Canvas, tự khởi động lại qua boot completed, thùng rác khôi phục lịch sử) hoạt động ổn định trên Android 14/15/16 (Oppo Find X8).
+  - Đã khắc phục dứt điểm lỗi lưu hàng loạt phiên sạc ảo `0% -> 0%` và lỗi kẹt timer không reset / cắm lại đếm tiếp giây cũ khi rút sạc.
 - **Việc có thể mở rộng tiếp theo:**
   1. Âm thanh chuông báo (Ringtone / Sound alert) khi pin chạm mức mục tiêu hoặc khi rút sạc.
   2. Cảnh báo quá nhiệt (Nhiệt độ pin > 40°C hoặc 45°C) để bảo vệ tuổi thọ pin.
@@ -75,6 +77,9 @@ app/src/main/res/values/themes.xml
 - compileSdk 34, minSdk 26, targetSdk 34, Java 17
 
 ## Lưu ý / chỗ dễ lỗi
+- **Tránh nhận diện nhầm trạng thái sạc khi vừa rút sạc:** Intent sticky `ACTION_BATTERY_CHANGED` có độ trễ cập nhật cờ `EXTRA_STATUS`. Bắt buộc kiểm tra `EXTRA_PLUGGED > 0` và dùng `NotificationHelper.isBatteryCharging(context)` để xác định chính xác trạng thái sạc.
+- **Đọc pin an toàn trong BroadcastReceiver:** `context.registerReceiver(null, ...)` trong Receiver context có thể trả về `null`. Luôn ưu tiên dùng `BatteryManager.BATTERY_PROPERTY_CAPACITY` và fallback qua `NotificationHelper.getBatteryPct(context)`.
+- **Dọn dẹp Active Session:** `SessionManager.finishSession()` luôn gọi `clearActiveSession()` vô điều kiện trước khi lưu để tránh cờ `active_exists = true` bị kẹt trong SharedPreferences làm đếm tiếp giây cũ.
 - **Quan trọng:** `BroadcastReceiver` trong `MainActivity` chỉ đăng ký khi `onResume` và hủy trong `onPause` — chỉ hoạt động khi app ở foreground. Theo dõi nền dựa vào `BatteryReceiver` (manifest) và `ChargingForegroundService`.
 - **Android 13+:** Cần quyền `POST_NOTIFICATIONS` runtime; nếu không granted, notification sẽ không hiển thị.
 - **Foreground Service:** API 34+ dùng `FOREGROUND_SERVICE_TYPE_SPECIAL_USE`; trên thiết bị hạn chế (OPPO/ColorOS) `startForegroundService` có thể ném exception, code đã có try-catch fallback.

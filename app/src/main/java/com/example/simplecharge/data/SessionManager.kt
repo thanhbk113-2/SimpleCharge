@@ -87,28 +87,35 @@ class SessionManager(context: Context) {
     }
 
     fun startOrResumeSession(currentLevel: Int, currentTemp: Float = 0f): ActiveSessionState {
+        val safeLevel = if (currentLevel > 0) currentLevel else prefs.getInt(KEY_ACTIVE_START_LEVEL, 50)
         if (!hasActiveSession()) {
             val now = System.currentTimeMillis()
             val target = getTargetPct()
             prefs.edit()
                 .putBoolean(KEY_ACTIVE_EXISTS, true)
                 .putLong(KEY_ACTIVE_START_TIME, now)
-                .putInt(KEY_ACTIVE_START_LEVEL, currentLevel)
+                .putInt(KEY_ACTIVE_START_LEVEL, safeLevel)
                 .putInt(KEY_ACTIVE_TARGET_PCT, target)
                 .putBoolean(KEY_ACTIVE_REACHED, false)
                 .remove(KEY_ACTIVE_DATA_POINTS)
                 .apply()
 
             // Ghi nhận điểm dữ liệu đầu tiên
-            recordDataPoint(currentLevel, currentTemp)
+            recordDataPoint(safeLevel, currentTemp)
 
             return ActiveSessionState(
                 isActive = true,
                 startTimeMs = now,
-                startLevel = currentLevel,
+                startLevel = safeLevel,
                 targetPct = target,
                 isTargetReached = false
             )
+        } else {
+            // Nếu session đang chạy nhưng startLevel trước đó bị ghi lỗi 0%, tự động sửa lại
+            val existingStart = prefs.getInt(KEY_ACTIVE_START_LEVEL, 0)
+            if (existingStart <= 0 && currentLevel > 0) {
+                prefs.edit().putInt(KEY_ACTIVE_START_LEVEL, currentLevel).apply()
+            }
         }
         return getActiveSession()
     }
@@ -191,21 +198,38 @@ class SessionManager(context: Context) {
         val active = getActiveSession()
         if (!active.isActive) return null
 
+        val endTime = System.currentTimeMillis()
+        val durationMs = (endTime - active.startTimeMs).coerceAtLeast(0L)
+        val safeStartLevel = if (active.startLevel > 0) active.startLevel else (if (endLevel > 0) endLevel else 0)
+        val safeEndLevel = if (endLevel > 0) endLevel else safeStartLevel
+
         // Ghi điểm cuối cùng
-        recordDataPoint(endLevel, endTemp)
+        recordDataPoint(safeEndLevel, endTemp)
         val dataPoints = getActiveDataPoints()
+
+        // LUÔN LUÔN xóa active session để không bao giờ bị kẹt lại phiên cũ
+        clearActiveSession()
+
+        // Lọc bỏ phiên sạc rác:
+        // 1. Lỗi đọc pin 0% -> 0% (cả start và end đều <= 0)
+        // 2. Chập chờn tiếp xúc jack cắm dưới 1.5 giây mà không tăng pin
+        val isGhostZeroSession = (safeStartLevel <= 0 && safeEndLevel <= 0)
+        val isJitterGlitch = (durationMs < 1_500L && safeEndLevel <= safeStartLevel)
+
+        if (isGhostZeroSession || isJitterGlitch) {
+            return null
+        }
 
         val session = ChargingSession(
             startTimeMs = active.startTimeMs,
-            endTimeMs = System.currentTimeMillis(),
-            startLevel = active.startLevel,
-            endLevel = endLevel,
+            endTimeMs = endTime,
+            startLevel = safeStartLevel,
+            endLevel = safeEndLevel,
             targetPct = active.targetPct,
             dataPoints = dataPoints
         )
 
         saveCompletedSession(session)
-        clearActiveSession()
         return session
     }
 
@@ -227,7 +251,11 @@ class SessionManager(context: Context) {
             val array = JSONArray(raw)
             for (i in 0 until array.length()) {
                 val obj = array.getJSONObject(i)
-                list.add(ChargingSession.fromJson(obj))
+                val session = ChargingSession.fromJson(obj)
+                // Tự động bỏ qua các phiên sạc rác 0% -> 0% cũ
+                if (session.startLevel > 0 || session.endLevel > 0) {
+                    list.add(session)
+                }
             }
         } catch (_: Exception) {}
         return list
@@ -257,7 +285,10 @@ class SessionManager(context: Context) {
             val array = JSONArray(raw)
             for (i in 0 until array.length()) {
                 val obj = array.getJSONObject(i)
-                list.add(ChargingSession.fromJson(obj))
+                val session = ChargingSession.fromJson(obj)
+                if (session.startLevel > 0 || session.endLevel > 0) {
+                    list.add(session)
+                }
             }
         } catch (_: Exception) {}
         return list

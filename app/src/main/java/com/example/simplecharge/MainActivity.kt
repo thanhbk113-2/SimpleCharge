@@ -251,17 +251,18 @@ class MainActivity : ComponentActivity() {
 
     private fun updateBatteryInfo() {
         val batteryStatus: Intent? = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        val rawLevel = batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: 50
+        val rawLevel = batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
         val scale = batteryStatus?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
-        val basePct = if (scale > 0) (rawLevel * 100) / scale else rawLevel
+        val basePct = if (rawLevel >= 0 && scale > 0) {
+            (rawLevel * 100) / scale
+        } else {
+            NotificationHelper.getBatteryPct(this)
+        }
         val effectivePct = (basePct + simulatedBonusLevel).coerceIn(0, 100)
         batteryPctState.intValue = effectivePct
 
-        val status = batteryStatus?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
-        val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
-                status == BatteryManager.BATTERY_STATUS_FULL
-
         val chargePlug = batteryStatus?.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) ?: -1
+        val isCharging = chargePlug > 0 && NotificationHelper.isBatteryCharging(this)
         val plugType = NotificationHelper.parsePlugType(chargePlug, isCharging)
 
         isChargingState.value = isCharging
@@ -298,16 +299,13 @@ class MainActivity : ComponentActivity() {
             if (active.isActive) {
                 val session = sessionManager.finishSession(effectivePct, temperatureCState.floatValue)
                 if (session != null) {
-                    recentSessionsState.value = sessionManager.getRecentSessions()
                     NotificationHelper.showDisconnectedNotification(this, effectivePct, session)
                 }
                 ChargingForegroundService.stop(this)
-                activeSessionState.value = sessionManager.getActiveSession()
-                elapsedMsState.longValue = 0L
-            } else {
-                activeSessionState.value = sessionManager.getActiveSession()
-                elapsedMsState.longValue = 0L
             }
+            activeSessionState.value = sessionManager.getActiveSession()
+            recentSessionsState.value = sessionManager.getRecentSessions()
+            elapsedMsState.longValue = 0L
         }
     }
 

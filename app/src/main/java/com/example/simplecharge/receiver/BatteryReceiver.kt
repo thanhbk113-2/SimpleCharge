@@ -35,8 +35,8 @@ class BatteryReceiver : BroadcastReceiver() {
                 NotificationHelper.createNotificationChannel(context)
 
                 // Kiểm tra xem máy vừa bật lên có đang cắm sạc không
-                if (isCurrentlyCharging(context)) {
-                    val pct = getBatteryPct(context)
+                if (NotificationHelper.isBatteryCharging(context)) {
+                    val pct = NotificationHelper.getBatteryPct(context)
                     val temp = getBatteryTemp(context)
                     sessionManager.startOrResumeSession(pct, temp)
 
@@ -55,7 +55,7 @@ class BatteryReceiver : BroadcastReceiver() {
             }
 
             Intent.ACTION_POWER_CONNECTED -> {
-                val pct = getBatteryPct(context)
+                val pct = NotificationHelper.getBatteryPct(context)
                 val temp = getBatteryTemp(context)
                 sessionManager.startOrResumeSession(pct, temp)
 
@@ -82,7 +82,7 @@ class BatteryReceiver : BroadcastReceiver() {
             Intent.ACTION_POWER_DISCONNECTED -> {
                 // ✅ 1. Tự động finish session khi rút sạc
                 val active = sessionManager.getActiveSession()
-                val pct = getBatteryPct(context)
+                val pct = NotificationHelper.getBatteryPct(context)
                 val temp = getBatteryTemp(context)
                 val session = if (active.isActive) {
                     sessionManager.finishSession(pct, temp)
@@ -118,22 +118,8 @@ class BatteryReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun isCurrentlyCharging(context: Context): Boolean {
-        val bs = context.registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        val status = bs?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
-        return status == BatteryManager.BATTERY_STATUS_CHARGING ||
-                status == BatteryManager.BATTERY_STATUS_FULL
-    }
-
-    private fun getBatteryPct(context: Context): Int {
-        val bs = context.registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        val level = bs?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: 0
-        val scale = bs?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
-        return if (scale > 0) (level * 100) / scale else level
-    }
-
     private fun getBatteryTemp(context: Context): Float {
-        val bs = context.registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val bs = context.applicationContext.registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         val rawTemp = bs?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0
         return rawTemp / 10f
     }

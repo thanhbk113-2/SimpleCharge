@@ -49,6 +49,32 @@ object NotificationHelper {
         }
     }
 
+    fun getBatteryPct(context: Context): Int {
+        val bm = context.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+        val cap = bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
+        if (cap in 1..100) return cap
+
+        val bs = context.applicationContext.registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val level = bs?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+        val scale = bs?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
+        if (level >= 0 && scale > 0) {
+            val pct = (level * 100) / scale
+            if (pct in 1..100) return pct
+        }
+        return if (cap > 0) cap else 50
+    }
+
+    fun isBatteryCharging(context: Context): Boolean {
+        val bs = context.applicationContext.registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val plug = bs?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0
+        if (plug <= 0) return false
+
+        val bm = context.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+        if (bm?.isCharging == true) return true
+        val status = bs?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
+        return status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
+    }
+
     fun getLocalizedPlugType(plugType: String): String {
         return when (plugType) {
             "AC Fast" -> "Sạc nhanh AC"

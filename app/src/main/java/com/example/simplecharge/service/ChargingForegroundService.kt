@@ -180,23 +180,17 @@ class ChargingForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun getCurrentBatteryPct(): Int {
-        val bs = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        val level = bs?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: 0
-        val scale = bs?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
-        return if (scale > 0) (level * 100) / scale else level
+        return NotificationHelper.getBatteryPct(this)
     }
 
     private fun getCurrentTemp(): Float {
-        val bs = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val bs = applicationContext.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         val rawTemp = bs?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0
         return rawTemp / 10f
     }
 
     private fun isCurrentlyCharging(): Boolean {
-        val bs = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        val status = bs?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
-        return status == BatteryManager.BATTERY_STATUS_CHARGING ||
-                status == BatteryManager.BATTERY_STATUS_FULL
+        return NotificationHelper.isBatteryCharging(this)
     }
 
     private fun getCurrentPlugType(isCharging: Boolean): String {
