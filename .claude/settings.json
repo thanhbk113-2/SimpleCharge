@@ -1,6 +1,21 @@
 {
   "maxEffortLevel": "medium",
-  "permissions": { "defaultMode": "acceptEdits" },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(git:*)",
+      "Bash(gradlew:*)",
+      "Bash(./gradlew:*)",
+      "Read",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch"
+    ]
+  },
   "env": {
     "ANTHROPIC_BASE_URL": "http://localhost:20128",
     "ANTHROPIC_AUTH_TOKEN": "omniroute",
@@ -10,5 +25,19 @@
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "antigravity-combo",
     "CLAUDE_CODE_MAX_CONTEXT_TOKENS": "131072",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/security-guard.ps1",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
   }
 }

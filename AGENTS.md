@@ -91,18 +91,36 @@ app/src/main/res/values/themes.xml
 
 ---
 
-## Nguyên tắc hoạt động của Agent (Tối ưu Token & Hiệu năng)
+## Nguyên tắc hoạt động của Agent — Triết lý Ponytail (Senior Dev Lười & Hiệu năng cao)
 
-Dành cho AI Agent làm việc trên dự án này nhằm đảm bảo tính chuẩn xác, tiết kiệm token tối đa và không phá vỡ kiến trúc:
+Dành cho AI Agent làm việc trên dự án này: Code tốt nhất là code không bao giờ phải viết. Giải quyết triệt để vấn đề với lượng code mới ít nhất, tiết kiệm token tối đa và bảo toàn kiến trúc gốc.
 
-### 1. Token-Saving Guidelines (Tiết kiệm token context)
-- **Đọc code đúng mục tiêu (Targeted Reads):** KHÔNG quét (read_file / grep) toàn bộ repo hoặc các thư mục build/cache (`.gradle`, `build/`). Chỉ đọc file và dòng thực sự liên quan đến task hiện tại.
-- **Batch tool calls:** Gộp song song các thao tác độc lập (đọc nhiều file, chạy lệnh kết hợp) trong cùng 1 turn thay vì gọi tuần tự từng turn.
-- **Tránh spam terminal:** Dùng chuỗi lệnh PowerShell với `;` hoặc `if ($?)` để thực hiện build + install + run trong một lượt thực thi duy nhất. Không chạy lặp lại các lệnh kiểm tra không cần thiết.
-- **Phản hồi cô đọng (Concise Communication):** Trả lời đúng trọng tâm, ngắn gọn, súc tích; không giải thích lan man những điều hiển nhiên trừ khi người dùng yêu cầu phân tích chi tiết.
+### 1. Triết lý Ponytail: Thay đổi nhỏ nhất mà đầy đủ
+- **Trước khi viết:** Đọc kỹ yêu cầu và code liên quan. Xác định mọi nơi thay đổi phải chạm tới (caller, receiver, service, persistence). Đánh giá rủi ro: liệu có làm hỏng luồng sạc, kẹt session hay mất dữ liệu không. Đó mới là phạm vi — tính năng thừa thì không.
+- **Thứ tự ưu tiên giải pháp:**
+  1. *Nó có cần tồn tại không?* Bỏ qua tính năng thừa, tùy chọn không ai yêu cầu. Yêu cầu chung chung thì chọn phiên bản nhỏ nhất làm được việc cốt lõi.
+  2. *Codebase đã có chưa?* Dùng helper (`NotificationHelper`), data manager (`SessionManager`), component sẵn có theo cùng pattern.
+  3. *Nền tảng Android có sẵn?* Tận dụng Android BatteryManager, Jetpack Compose có sẵn trước khi nghĩ đến giải pháp tự chế.
+  4. *Dependency sẵn có?* Dùng các thư viện đã khai báo. Không thêm thư viện ngoài chỉ vì vài dòng code.
+  5. *Đơn giản & súc tích:* Gói gọn dễ hiểu; diff ngắn nhất chạy được và đúng ở các trường hợp biên (edge cases) sẽ thắng.
+- **Sửa lỗi tận gốc một lần:** Trước khi sửa, tra cứu (grep) mọi nơi gọi hàm liên quan. Sửa dứt điểm nguyên nhân gốc ở phần code dùng chung (`SessionManager`, `NotificationHelper`), không vá ngọn rải rác.
+- **Không abstraction thừa:** Không wrapper, chuyển đổi kiểu phức tạp, config hay code "để dành cho tương lai". Giữ nguyên các tầng (Data, Service, Receiver, UI Compose).
+- **Quy ước shortcut:** Nếu chọn giải pháp tắt có giới hạn đã biết, phải có comment ngắn: `// shortcut: <giới hạn>, <khi nào nên nâng cấp>`.
+- **Kết thúc mỗi câu trả lời:** Luôn dành 1–2 dòng cuối nêu rõ: những gì bạn đã bỏ qua hoặc chưa kiểm tra, và rủi ro người dùng cần lưu ý (nếu có).
 
-### 2. Quy tắc kiến trúc dự án
-- **Localization:** Mọi chuỗi text hiển thị trên UI bắt buộc viết vào `Localization.kt` (cả 2 ngôn ngữ `English` và `Vietnamese`). Không tạo thêm chuỗi trong `strings.xml` (ngoài `app_name`).
+### 2. Những thứ KHÔNG BAO GIỜ được cắt bỏ
+- **An toàn thiết bị & bảo vệ dữ liệu:** Luôn giữ try-catch khi gọi `startForegroundService` / `stopService` (đặc biệt trên Android 14+ và thiết bị Oppo/ColorOS).
+- **Session Lifecycle:** Luôn đảm bảo `clearActiveSession()` khi kết thúc sạc để không làm hỏng dữ liệu phiên sau.
+- **Validation ranh giới:** Kiểm tra mức pin hợp lệ (1–100%), tránh ghi nhận phiên ảo `0% -> 0%`.
+- **Mọi yêu cầu người dùng đã chỉ định rõ.**
+
+### 3. Token-Saving Guidelines (Tiết kiệm token context)
+- **Targeted Reads:** KHÔNG quét toàn bộ repo hoặc thư mục build/cache (`.gradle`, `build/`). Chỉ đọc file và dòng thực sự liên quan.
+- **Batch tool calls:** Gộp song song các thao tác độc lập (đọc nhiều file, chạy lệnh kết hợp) trong cùng 1 lượt.
+- **Tránh spam terminal:** Chạy build/test bằng chuỗi lệnh gộp, không gọi các lệnh kiểm tra lặp lại thừa thãi.
+- **Phản hồi cô đọng:** Trả lời thẳng vào trọng tâm, súc tích, không giải thích lan man những điều hiển nhiên.
+
+### 4. Quy tắc kiến trúc dự án
+- **Localization:** Mọi chuỗi text trên UI bắt buộc viết vào `Localization.kt` (cả 2 ngôn ngữ `English` và `Vietnamese`). Không tạo chuỗi trong `strings.xml` (ngoài `app_name`).
 - **State & Persistence:** UI state tập trung tại `MainActivity.kt`. Logic lưu trữ tập trung tại `SessionManager.kt`.
-- **An toàn thiết bị thực (Android 14+ / Oppo ColorOS):** Luôn bọc try-catch khi gọi `startForegroundService` / `stopService`. Đảm bảo Service có khai báo type hợp lệ (`specialUse`) trong Manifest.
-- **Cập nhật tài liệu:** Sau mỗi tính năng hoàn thành hoặc sửa đổi kiến trúc, luôn đồng bộ cập nhật lại `AGENTS.md`.
+- **Cập nhật tài liệu:** Sau mỗi thay đổi kiến trúc hoặc tính năng, luôn đồng bộ cập nhật lại `AGENTS.md`.
