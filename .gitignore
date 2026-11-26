@@ -48,6 +48,14 @@ google-services.json
 # OS specific files
 .DS_Store
 Thumbs.db
+
+# Tool generated files
+.graphify/
+.graphifyignore
+graphify-out/
+.ponytail/
+.superpowers/
+
 Desktop.ini
 
 # Capture and recording files

@@ -65,6 +65,12 @@ app/src/main/res/values/themes.xml
 - **Trạng thái:**
   - Các tính năng chính (theo dõi sạc real-time, notification & foreground service, biểu đồ đường cong sạc Canvas, tự khởi động lại qua boot completed, thùng rác khôi phục lịch sử) hoạt động ổn định trên Android 14/15/16 (Oppo Find X8).
   - Đã khắc phục dứt điểm lỗi lưu hàng loạt phiên sạc ảo `0% -> 0%` và lỗi kẹt timer không reset / cắm lại đếm tiếp giây cũ khi rút sạc.
+  - Cấu hình môi trường dev:
+    - Đã cài đặt plugin và skill `ponytail` toàn cục (chế độ senior dev tối giản).
+    - Đã cài đặt plugin và bộ skills `superpowers` (7.0.2) toàn cục + sao chép vào `~/.claude/skills` (hỗ trợ cả Claude Desktop tab Code & CLI). Tự động phối hợp quy trình: debugging, TDD, planning, review.
+    - Tích hợp hook an toàn `security-guard.ps1` (chuyển lệnh xóa nguy hiểm sang prompt hỏi xác nhận `ask`, loại bỏ false-positive của `ni`).
+    - Thêm các thư mục sinh tự động (`.graphify/`, `graphify-out/`, `.ponytail/`) vào `.gitignore`.
+    - Duy trì knowledge graph qua `graphify` (`graphify-out/`) để tra cứu nhanh luồng dữ liệu và quan hệ giữa các component.
 - **Việc có thể mở rộng tiếp theo:**
   1. Âm thanh chuông báo (Ringtone / Sound alert) khi pin chạm mức mục tiêu hoặc khi rút sạc.
   2. Cảnh báo quá nhiệt (Nhiệt độ pin > 40°C hoặc 45°C) để bảo vệ tuổi thọ pin.

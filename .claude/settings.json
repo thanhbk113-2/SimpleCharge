@@ -2,19 +2,7 @@
   "maxEffortLevel": "medium",
   "permissions": {
     "defaultMode": "acceptEdits",
-    "allow": [
-      "Bash(node:*)",
-      "Bash(npm:*)",
-      "Bash(npx:*)",
-      "Bash(git:*)",
-      "Bash(gradlew:*)",
-      "Bash(./gradlew:*)",
-      "Read",
-      "Glob",
-      "Grep",
-      "WebFetch",
-      "WebSearch"
-    ]
+    "allow": ["Bash", "Read", "Glob", "Grep", "WebFetch", "WebSearch"]
   },
   "env": {
     "ANTHROPIC_BASE_URL": "http://localhost:20128",
